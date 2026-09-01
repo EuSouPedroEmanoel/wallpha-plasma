@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <group name="General">
+    <!-- wallp: caminho unificado imagem ou vídeo. Compat com org.kde.image + Reborn -->
+    <entry name="Image" type="String">
+      <label>wallp: imagem atual</label>
+      <default></default>
+    </entry>
+    <entry name="Source" type="String">
+      <label>wallp: source unificado (file://)</label>
+      <default></default>
+    </entry>
+    <entry name="VideoUrls" type="String">
+      <label>Compat Reborn: VideoUrls JSON</label>
+      <default>[]</default>
+    </entry>
+    <!-- Áudio/Loop — mapeiam som/repetir/loop do wallp.yml -->
+    <entry name="MuteMode" type="Int">
+      <label>wallp: 5=mudo (padrão), 4=com som</label>
+      <default>5</default>
+    </entry>
+    <entry name="Volume" type="Double">
+      <label>Volume 0.0-1.0</label>
+      <default>1.0</default>
+    </entry>
+    <entry name="Loop" type="Bool">
+      <label>wallp: loop infinito do vídeo (repetir/loop:true)</label>
+      <default>false</default>
+    </entry>
+    <!-- Leve: sem PauseMode/BlurMode/Effects/Crossfade. Só o essencial -->
+    <entry name="FillMode" type="Int">
+      <label>fillMode VideoOutput/Image</label>
+      <default>2</default>
+    </entry>
+    <entry name="BackgroundColor" type="String">
+      <label>Cor de fundo quando sem mídia</label>
+      <default>#000000</default>
+    </entry>
+  </group>
+</kcfg>

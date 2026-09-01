@@ -1,0 +1,20 @@
+{
+    "KPackageStructure": "Plasma/Wallpaper",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "pedro@example.com",
+                "Name": "Pedro Emanoel"
+            }
+        ],
+        "Category": "",
+        "Description": "Wallpaper unificado imagem + vídeo para wallp — KDE Plasma 6, leve, sem painel",
+        "Icon": "preferences-desktop-wallpaper",
+        "Id": "com.wallp.wallpaper",
+        "License": "MIT",
+        "Name": "wallp Wallpaper",
+        "Version": "0.1.0",
+        "Website": "https://github.com/EuSouPedroEmanoel/wallp-cli"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
