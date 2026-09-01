@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
-project(plasma-wallpaper-wallp VERSION 0.1.0)
+project(wallp-plasma VERSION 0.1.0)
 
-# wallp Wallpaper — plasmóide unificado imagem+vídeo, leve, sem painel
+# wallp-plasma — backend Plasma do wallp (wallp = wallpaper) — plasmóide unificado imagem+vídeo, leve, sem painel
 # Instala via: cmake -B build && cmake --install build --prefix ~/.local
 # ou: kpackagetool6 -t Plasma/Wallpaper --install .
 

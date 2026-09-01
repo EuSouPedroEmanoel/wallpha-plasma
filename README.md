@@ -1,6 +1,8 @@
-# plasma-wallpaper-wallp
+# wallp-plasma
 
-Plasmóide **unificado imagem + vídeo** para KDE Plasma 6 — backend leve do `wallp`.
+Backend Plasma do `wallp` — plasmóide **unificado imagem + vídeo** para KDE Plasma 6, leve.
+
+> `wallp` = wallpaper literalmente, então `wallp-plasma` já é o wallpaper no Plasma.
 
 *   **KDE only** (Wayland/X11) — `WallpaperItem` QML + `QtMultimedia`/`ffmpeg`
 *   **Sem painel de config** — tudo via `wallp.yml` + `wallp -c/-a/-r/-n/-x`
