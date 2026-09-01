@@ -22,6 +22,16 @@ def main():
         daemon_run()
         return
 
+    if opts.get("profile"):
+        from .mode_profile import _profile_mode
+        _profile_mode(opts)
+        return
+
+    if opts.get("ps"):
+        from .mode_ps import _ps_mode
+        _ps_mode(opts)
+        return
+
     if opts["list"]:
         _list_mode(opts)
         return

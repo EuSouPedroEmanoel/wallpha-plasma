@@ -1,7 +1,7 @@
 import sys
 
-flags = ("-c", "-n", "-r", "-t", "-m", "-q", "-l", "-rep", "-i", "-v", "-int", "-s", "-y", "-yl", "-a", "-x", "-d", "-log", "-h", "--help", "--init", "-al", "--list", "--al")
-mode_flags = ("-c", "-n", "-r", "-a", "-x", "-d", "--init", "-al", "--list", "--al")
+flags = ("-c", "-n", "-r", "-t", "-m", "-q", "-l", "-rep", "-i", "-v", "-int", "-s", "-y", "-yl", "-a", "-x", "-d", "-log", "-h", "--help", "--init", "-al", "--list", "--al", "-ps", "--ps", "--profile", "--check")
+mode_flags = ("-c", "-n", "-r", "-a", "-x", "-d", "--init", "-al", "--list", "--al", "-ps", "--ps", "--profile", "--check")
 value_flags = ("-t", "-m", "-q", "-l", "-s", "-y", "-yl")
 
 
@@ -19,6 +19,9 @@ def parse():
         "log_lines": None,
         "help": False,
         "list": False,
+        "ps": False,
+        "ps_count": None,
+        "profile": False,
         "target": None,
         "tempo": None,
         "max": None,
@@ -38,6 +41,18 @@ def parse():
         a = args[i]
         if a in ("-h", "--help"):
             opts["help"] = True
+        elif a in ("-ps", "--ps"):
+            modes.add("-ps")
+            opts["ps"] = True
+            # -ps [N] opcional, padrão 10
+            if i + 1 < len(args) and args[i + 1].isdigit():
+                opts["ps_count"] = int(args[i + 1])
+                i += 1
+            else:
+                opts["ps_count"] = 10
+        elif a in ("--profile", "--check"):
+            modes.add("--profile")
+            opts["profile"] = True
         elif a in ("-c", "-n", "-r", "-a", "-x", "-d", "--init", "-al", "--list", "--al"):
             modes.add(a)
             if a == "-c":
@@ -110,11 +125,19 @@ def parse():
         modes.add("-r")
 
     if len(modes) > 1:
-        print("Erro: use apenas um comando por vez (-c, -n, -r, -a, -x, -d, -al ou --init)")
+        print("Erro: use apenas um comando por vez (-c, -n, -r, -a, -x, -d, -al, -ps, --profile ou --init)")
         sys.exit(1)
 
     if opts["next"] and opts["target"] is not None:
         print("Erro: -n não aceita caminho/nome (use -c para escolher)")
+        sys.exit(1)
+
+    if opts["ps"] and opts["target"] is not None:
+        print("Erro: -ps não aceita caminho/nome (use -ps [N] apenas)")
+        sys.exit(1)
+
+    if opts["profile"] and opts["target"] is not None:
+        print("Erro: --profile/--check não aceita caminho/nome")
         sys.exit(1)
 
     used_values = opts["tempo"] is not None or opts["max"] is not None or opts["qtd"] is not None or opts["loop"] is not None or opts["rep"] or opts["images"] or opts["videos"] or opts["integro"] or opts["som"] is not None
@@ -137,6 +160,9 @@ def help():
     print("wallp — wallpaper animado/imagem no KDE Plasma")
     print()
     print("Uso:")
+    print("  wallp -ps [N]             Próximos N wallpapers da agenda (padrão 10) — mostra tamanho, nome, duração, loop, integro")
+    print("  wallp --profile           Perfil: varre yml e avisa vídeos >500MB, arquivos faltando, yt sem cache")
+    print("  wallp --check             Alias para --profile (compat install.sh --check)")
     print("  wallp -al [regex]         Lista wallpapers do yml (filtra por regex no nome/local)")
     print("  wallp -c [caminho|nome]   Troca o wallpaper")
     print("                              caminho = arquivo (vídeo/imagem) ou pasta")
@@ -181,6 +207,8 @@ def help():
     print("                              sozinho: mostra as últimas N linhas (padrão 50)")
     print("                              junto de -a/-r/-c/-n/-x: roda o comando e segue")
     print("                              o log (como tail -f, mostrando N linhas)")
+    print("  wallp -ps 5               Próximos 5 da agenda (com tamanho/duração/loop/integro)")
+    print("  wallp --profile           Avisa pesados >500MB e faltando")
     print("  wallp -h                  Mostra esta ajuda")
     print("  wallp --init              Cria um wallp.yml de exemplo")
     print()
