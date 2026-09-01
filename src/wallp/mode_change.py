@@ -57,7 +57,7 @@ def _change_target(target, opts=None):
             if e.get("is_list"):
                 _start_list(e, opts)
                 return
-            if any(opts.get(k) is not None for k in ("tempo", "max", "qtd", "loop", "rep", "images", "videos", "integro", "som")):
+            if (opts.get("tempo") is not None or opts.get("max") is not None or opts.get("qtd") is not None or opts.get("loop") is not None or opts.get("rep") or opts.get("images") or opts.get("videos") or opts.get("integro") or opts.get("som") is not None):
                 log.err(f"'{target}' não é uma lista; essas opções só valem com -r ou -c <lista>")
                 sys.exit(1)
             plugin, path = apply.apply(_yt_path(e), loop=bool(e.get("repetir") or e.get("loop")), som=e.get("som"), integro=e.get("integro"))

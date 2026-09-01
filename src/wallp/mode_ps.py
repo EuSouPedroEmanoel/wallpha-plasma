@@ -86,6 +86,20 @@ def _entry_dur(e):
         return e.get("tempo") or entries._list_total(e)
     return e.get("tempo")
 
+def _short_path(arq):
+    """Só pasta pai + arquivo, ex: Wallpapers/celeste.mp4"""
+    try:
+        p = Path(str(arq)).expanduser()
+        if not p.name:
+            return str(arq)
+        # se tem parent com nome (não root)
+        if p.parent and p.parent.name and p.parent.name not in (".", "/"):
+            return f"{p.parent.name}/{p.name}"
+        return p.name
+    except Exception:
+        return str(arq)
+
+
 def _entry_loop_str(e):
     v = e.get("loop")
     if v is True:
@@ -98,11 +112,14 @@ def _entry_loop_str(e):
         return str(v)
 
 def _ps_mode(opts):
-    n = opts.get("ps_count") or 10
+    n = opts.get("ps_count")
+    # sem N explícito → só atual (1); compat fallback antigo 10 vira 1
+    if n is None:
+        n = 1
     try:
         n = int(n)
-    except ValueError:
-        n = 10
+    except (ValueError, TypeError):
+        n = 1
     n = max(1, min(n, 100))
 
     entries_list = entries.load_checked()
@@ -164,24 +181,21 @@ def _ps_mode(opts):
         if (cur - now).days > 370:
             break
 
-    # render
-    print(f"Próximos {len(seen)} wallpapers a partir de {now.strftime('%Y-%m-%d %H:%M:%S')} (wallp -ps {n}):\n")
-    # header
-    hdr = f"{'#':>2}  {'tamanho':>9}  {'nome':<20}  {'duração':>8}  {'loop':>6}  {'integro':>7}  {'hora':<11}  {'arquivo'}"
-    print(hdr)
-    print("-" * len(hdr))
-
+    # render — sem N mostra só o atual
+    if len(seen) == 1:
+        print(f"Wallpaper atual — {now.strftime('%Y-%m-%d %H:%M:%S')} (wallp -ps):\n")
+    else:
+        print(f"Próximos {len(seen)} wallpapers a partir de {now.strftime('%Y-%m-%d %H:%M:%S')} (wallp -ps {n}):\n")
     for i, (start, end, e) in enumerate(seen, 1):
         size = _entry_size_bytes(e)
         size_s = _hum_size(size)
         # marca pesado
-        heavy = ""
-        if size is not None and size > HEAVY_LIMIT:
-            heavy = f" ⚠️ >{_hum_size(HEAVY_LIMIT)}"
-        nome = (e.get("nome") or "")[:20]
+        heavy = size is not None and size > HEAVY_LIMIT
+        heavy_mark = f" ⚠️ >{_hum_size(HEAVY_LIMIT)}" if heavy else ""
+        nome = (e.get("nome") or "")[:40]
         # para lista, mostra sub_nome
         if e.get("is_list") and e.get("sub_nome"):
-            nome = f"{e['nome']}/{e['sub_nome']}"[:20]
+            nome = f"{e['nome']}/{e['sub_nome']}"[:40]
         dur = _entry_dur(e)
         real = end - start
         # se dur é None (default sem tempo ou vídeo loop infinito), mostra duração real até próxima troca
@@ -199,21 +213,21 @@ def _ps_mode(opts):
             hora_s = f"{start.strftime('%H:%M')}"
         # duração real até próxima troca (para default sem tempo, já é dur)
         real_s = _hum_tempo(real)
-        # arquivo
+        # arquivo — só pasta pai + nome (curto)
         arq = e.get("arquivo") or e.get("local") or ""
-        # encurta path
-        try:
-            arq_disp = str(Path(arq).expanduser())
-            if len(arq_disp) > 50:
-                arq_disp = "…" + arq_disp[-49:]
-        except Exception:
-            arq_disp = str(arq)
+        arq_disp = _short_path(arq)
 
-        # linha principal
-        print(f"{i:>2}  {size_s:>9}{heavy:<10}  {nome:<20}  {dur_s:>8}  {loop_s:>6}  {integro_s:>7}  {hora_s:<11}  {arq_disp}")
-        # segunda linha: horário real + arquivo completo se pesado
-        # mostra intervalo real
-        print(f"    {start.strftime('%m-%d %H:%M')}→{end.strftime('%H:%M')} ({real_s})  {arq}" + (heavy and f"  ⚠️ pesado (> {_hum_size(HEAVY_LIMIT)}) — considere comprimir" or ""))
+        # tópicos (em vez de tabela)
+        print(f"{i}. {nome}")
+        print(f"   • arquivo: {arq_disp}")
+        print(f"   • tamanho: {size_s}{heavy_mark}" + (f"  ⚠️ pesado (> {_hum_size(HEAVY_LIMIT)}) — considere comprimir" if heavy else ""))
+        print(f"   • duração: {dur_s}")
+        print(f"   • loop: {loop_s}")
+        print(f"   • integro: {integro_s}")
+        print(f"   • hora: {hora_s}")
+        print(f"   • período: {start.strftime('%m-%d %H:%M')} → {end.strftime('%H:%M')} ({real_s})")
+        if i != len(seen):
+            print()
 
     print()
     # rodapé com dicas

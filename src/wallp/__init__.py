@@ -27,13 +27,19 @@ def main():
         _profile_mode(opts)
         return
 
-    if opts.get("ps"):
+    # ps sozinho (sem outro modo principal) → mostra só atual/próximos e sai
+    # ps combinado com -c/-r/-a continua e será exibido após executar o comando
+    has_main = opts["random"] or opts["auto"] or opts["stop"] or opts["change"] or opts["next"] or opts["list"] or opts["daemon"] or opts["init"]
+    if opts.get("ps") and not has_main:
         from .mode_ps import _ps_mode
         _ps_mode(opts)
         return
 
     if opts["list"]:
         _list_mode(opts)
+        if opts.get("ps"):
+            from .mode_ps import _ps_mode
+            _ps_mode(opts)
         return
 
     if opts["random"]:
@@ -69,6 +75,9 @@ def main():
 
     if opts["log"]:
         _show_log(opts, follow=True)
+    if opts.get("ps"):
+        from .mode_ps import _ps_mode
+        _ps_mode(opts)
 
 
 def _list_mode(opts):

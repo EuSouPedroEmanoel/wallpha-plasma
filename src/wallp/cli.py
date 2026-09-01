@@ -44,12 +44,12 @@ def parse():
         elif a in ("-ps", "--ps"):
             modes.add("-ps")
             opts["ps"] = True
-            # -ps [N] opcional, padrão 10
+            # -ps [N] opcional, sem N = só atual (1)
             if i + 1 < len(args) and args[i + 1].isdigit():
                 opts["ps_count"] = int(args[i + 1])
                 i += 1
             else:
-                opts["ps_count"] = 10
+                opts["ps_count"] = 1
         elif a in ("--profile", "--check"):
             modes.add("--profile")
             opts["profile"] = True
@@ -124,16 +124,25 @@ def parse():
         opts["random"] = True
         modes.add("-r")
 
+    # ps pode ser combinado com -c/-r/-a (e -n); demais combos continuam exclusivos
     if len(modes) > 1:
-        print("Erro: use apenas um comando por vez (-c, -n, -r, -a, -x, -d, -al, -ps, --profile ou --init)")
-        sys.exit(1)
+        if "-ps" in modes:
+            other = modes - {"-ps"}
+            if len(other) == 1 and other.issubset({"-c", "-n", "-r", "-a"}):
+                pass
+            else:
+                print("Erro: use apenas um comando por vez (-c, -n, -r, -a, -x, -d, -al, -ps, --profile ou --init) — ps só pode ser combinado com -c, -r ou -a")
+                sys.exit(1)
+        else:
+            print("Erro: use apenas um comando por vez (-c, -n, -r, -a, -x, -d, -al, -ps, --profile ou --init)")
+            sys.exit(1)
 
     if opts["next"] and opts["target"] is not None:
         print("Erro: -n não aceita caminho/nome (use -c para escolher)")
         sys.exit(1)
 
-    if opts["ps"] and opts["target"] is not None:
-        print("Erro: -ps não aceita caminho/nome (use -ps [N] apenas)")
+    if opts["ps"] and opts["target"] is not None and not (opts["change"] or opts["random"] or opts["auto"] or opts["next"]):
+        print("Erro: -ps não aceita caminho/nome (use -ps [N] apenas) — com -c/-r/-a use o alvo desses comandos")
         sys.exit(1)
 
     if opts["profile"] and opts["target"] is not None:
@@ -160,7 +169,7 @@ def help():
     print("wallp — wallpaper animado/imagem no KDE Plasma")
     print()
     print("Uso:")
-    print("  wallp -ps [N]             Próximos N wallpapers da agenda (padrão 10) — mostra tamanho, nome, duração, loop, integro")
+    print("  wallp -ps [N]             Mostra wallpaper atual (sem N) ou próximos N da agenda — tamanho, nome, duração, loop, integro (combinável com -c/-r/-a)")
     print("  wallp --profile           Perfil: varre yml e avisa vídeos >500MB, arquivos faltando, yt sem cache")
     print("  wallp --check             Alias para --profile (compat install.sh --check)")
     print("  wallp -al [regex]         Lista wallpapers do yml (filtra por regex no nome/local)")
@@ -207,7 +216,9 @@ def help():
     print("                              sozinho: mostra as últimas N linhas (padrão 50)")
     print("                              junto de -a/-r/-c/-n/-x: roda o comando e segue")
     print("                              o log (como tail -f, mostrando N linhas)")
-    print("  wallp -ps 5               Próximos 5 da agenda (com tamanho/duração/loop/integro)")
+    print("  wallp -ps                 Wallpaper atual (tamanho/duração/loop/integro, arquivo = dir/arquivo)")
+    print("  wallp -ps 5               Próximos 5 da agenda")
+    print("  wallp -ps -c <nome>       Troca e mostra o atual (ps combinável com -c/-r/-a)")
     print("  wallp --profile           Avisa pesados >500MB e faltando")
     print("  wallp -h                  Mostra esta ajuda")
     print("  wallp --init              Cria um wallp.yml de exemplo")

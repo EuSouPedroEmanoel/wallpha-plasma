@@ -19,6 +19,17 @@ def _hum_size(n):
         return f"{n/1024/1024:.1f} MB"
     return f"{n/1024/1024/1024:.2f} GB"
 
+def _short_path(p):
+    try:
+        pp = Path(str(p)).expanduser()
+        if not pp.name:
+            return str(p)
+        if pp.parent and pp.parent.name and pp.parent.name not in (".", "/"):
+            return f"{pp.parent.name}/{pp.name}"
+        return pp.name
+    except Exception:
+        return str(p)
+
 def _profile_mode(opts):
     entries_list = entries.load_checked()
     if entries_list is None:
@@ -133,24 +144,24 @@ def _profile_mode(opts):
             except OSError as ex:
                 missing.append((e, target))
 
-    # report
+    # report — mostra só pasta pai + arquivo (curto)
     if heavy:
         print(f"⚠️  PESADOS >{_hum_size(HEAVY_LIMIT)} ({len(heavy)}):")
         for e, sz in heavy:
-            print(f"  - {e['nome']:<20} {_hum_size(sz):>9}  {e.get('local')}")
+            print(f"  - {e['nome']:<20} {_hum_size(sz):>9}  {_short_path(e.get('local'))}")
             print(f"    -> {_hum_size(sz)} — considere comprimir: ffmpeg -i input.mp4 -vf scale=-2:1080 -c:v libx264 -crf 23 -c:a aac -b:a 128k output.mp4")
         print()
 
     if missing:
         print(f"❌ FALTANDO ({len(missing)}):")
         for e, p in missing:
-            print(f"  - {e.get('nome','?'):<20}  {p}  (local: {e.get('local')})")
+            print(f"  - {e.get('nome','?'):<20}  {_short_path(p)}  (local: {_short_path(e.get('local'))})")
         print()
 
     if zero_dir:
         print(f"⚠️  DIRETÓRIO VAZIO ({len(zero_dir)}):")
         for e, p in zero_dir:
-            print(f"  - {e['nome']:<20}  {p}")
+            print(f"  - {e['nome']:<20}  {_short_path(p)}")
         print()
 
     if not heavy and not missing and not zero_dir:
