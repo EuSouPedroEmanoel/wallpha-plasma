@@ -11,6 +11,21 @@ ask(){ [ "$YES" = 1 ] && return 0; read -r -p "  Instalar agora? [s/N] " r; [ "$
 step(){ printf '\n==> %s\n' "$1"; }
 ok(){ printf '  OK   %s\n' "$1"; }
 no(){ printf '  FALTA %s\n' "$1"; }
+detect_pm(){ if have pacman; then echo "pacman"; elif have apt-get; then echo "apt"; elif have dnf; then echo "dnf"; elif have zypper; then echo "zypper"; elif have emerge; then echo "emerge"; else echo ""; fi; }
+PM="$(detect_pm)"
+install_pkg(){
+    if [ "$CHECK" = 1 ]; then return 0; fi
+    if [ -z "$PM" ]; then no "$* (instale manualmente)"; return 1; fi
+    if ! ask; then no "$*"; return 1; fi
+    case "$PM" in
+        pacman) sudo pacman -S --needed "$@" ;;
+        apt) sudo apt-get update -qq 2>/dev/null; sudo apt-get install -y "$@" ;;
+        dnf) sudo dnf install -y "$@" ;;
+        zypper) sudo zypper install -y "$@" ;;
+        emerge) sudo emerge "$@" ;;
+        *) no "$* (gerenciador $PM não suportado)"; return 1 ;;
+    esac
+}
 
 step "Plasmóide com.wallp.wallpaper"
 if [ -d "/usr/share/plasma/wallpapers/com.wallp.wallpaper" ] || [ -d "$DEST" ]; then
@@ -26,8 +41,31 @@ else
   fi
 fi
 
-step "Daemon Python (wallp-plasma)"
-if python3 -c "import yaml, dbus" 2>/dev/null; then ok "python3:dbus, yaml"; else no "python3:dbus,yaml (pacman -S python-dbus python-yaml)"; fi
+step "Dependências (KDE Plasma 6 em qualquer distro)"
+# cmake e extra-cmake-modules são só para build do plasmóide (pode remover depois)
+if have cmake; then ok "cmake"; else no "cmake"; install_pkg "cmake" || true; fi
+if [ "$PM" = "pacman" ]; then
+    if pacman -Q extra-cmake-modules >/dev/null 2>&1; then ok "extra-cmake-modules"; else no "extra-cmake-modules"; install_pkg "extra-cmake-modules" || true; fi
+    if pacman -Q qt6-declarative >/dev/null 2>&1; then ok "qt6-declarative"; else no "qt6-declarative"; install_pkg "qt6-declarative" || true; fi
+elif [ "$PM" = "apt" ]; then
+    if dpkg -l extra-cmake-modules 2>/dev/null | grep -q "^ii"; then ok "extra-cmake-modules"; else no "extra-cmake-modules"; install_pkg "extra-cmake-modules" || true; fi
+    if dpkg -l qml6-module-qtquick 2>/dev/null | grep -q "^ii"; then ok "qml6-module-qtquick"; else no "qml6-module-qtquick"; install_pkg "qml6-module-qtquick" || true; fi
+elif [ "$PM" = "dnf" ]; then
+    if rpm -q extra-cmake-modules >/dev/null 2>&1; then ok "extra-cmake-modules"; else no "extra-cmake-modules"; install_pkg "extra-cmake-modules" || true; fi
+    if rpm -q qt6-qtdeclarative >/dev/null 2>&1; then ok "qt6-qtdeclarative"; else no "qt6-qtdeclarative"; install_pkg "qt6-qtdeclarative" || true; fi
+elif [ "$PM" = "zypper" ]; then
+    if rpm -q extra-cmake-modules >/dev/null 2>&1; then ok "extra-cmake-modules"; else no "extra-cmake-modules"; install_pkg "extra-cmake-modules" || true; fi
+fi
+
+step "Daemon Python (wallp-plasma) — funciona em Debian, Fedora, Arch, openSUSE"
+if python3 -c "import yaml, dbus" 2>/dev/null; then ok "python3:dbus, yaml"; else
+    no "python3:dbus,yaml"
+    case "$PM" in
+        apt) install_pkg "python3-dbus" "python3-yaml" || true ;;
+        dnf|zypper) install_pkg "python3-dbus" "python3-pyyaml" || true ;;
+        *) install_pkg "python-dbus" "python-yaml" || true ;;
+    esac
+fi
 if [ "$CHECK" != 1 ]; then
   mkdir -p "$HOME/.local/bin"
   ln -sf "$DIR/bin/wallp" "$HOME/.local/bin/wallp"
