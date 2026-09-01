@@ -10,3 +10,8 @@ install_manifest.txt
 *.jsc
 .DS_Store
 .backlog/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.egg-info/

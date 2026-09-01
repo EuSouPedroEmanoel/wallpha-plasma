@@ -1,0 +1,13 @@
+[Unit]
+Description=wallp Plasma — daemon de wallpaper (agenda + plasmóide com.wallp.wallpaper)
+After=plasma-plasmashell.service
+PartOf=plasma-plasmashell.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/wallp-plasma-daemon
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
