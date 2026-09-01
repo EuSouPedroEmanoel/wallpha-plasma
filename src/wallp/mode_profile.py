@@ -1,4 +1,7 @@
+import json
 import os
+import re
+import urllib.request
 from pathlib import Path
 
 from . import entries, log, media
@@ -29,6 +32,88 @@ def _short_path(p):
         return pp.name
     except Exception:
         return str(p)
+
+
+def _local_version():
+    try:
+        import importlib.metadata
+        for pkg in ("wallp", "wallp-plasma"):
+            try:
+                v = importlib.metadata.version(pkg)
+                if v:
+                    return v
+            except Exception:
+                continue
+    except Exception:
+        pass
+    try:
+        p = Path(__file__).parents[2] / "pyproject.toml"
+        if p.is_file():
+            txt = p.read_text()
+            m = re.search(r'version\s*=\s*"([^"]+)"', txt)
+            if m:
+                return m.group(1)
+    except Exception:
+        pass
+    return None
+
+
+def _latest_tag(repo):
+    try:
+        url = f"https://api.github.com/repos/EuSouPedroEmanoel/{repo}/releases/latest"
+        with urllib.request.urlopen(url, timeout=1.5) as r:
+            data = json.loads(r.read().decode())
+            tag = data.get("tag_name", "")
+            return tag.lstrip("v")
+    except Exception:
+        return None
+
+
+def _warn_updates():
+    try:
+        is_plasma = "wallp-plasma" in str(Path(__file__).resolve())
+        local = _local_version()
+        if not local:
+            return
+        latest_plasma = _latest_tag("wallp-plasma")
+        if latest_plasma:
+            plasma_local = None
+            if not is_plasma:
+                for cand in [Path.home() / "dev/wallp/wallp-plasma/pyproject.toml", Path.home() / ".local/share/wallp-plasma/pyproject.toml"]:
+                    if cand.is_file():
+                        try:
+                            txt2 = cand.read_text()
+                            m2 = re.search(r'version\s*=\s*"([^"]+)"', txt2)
+                            if m2:
+                                plasma_local = m2.group(1)
+                                break
+                        except Exception:
+                            continue
+                if plasma_local is None:
+                    plasma_local = latest_plasma
+                check_ver = plasma_local
+            else:
+                check_ver = local
+            try:
+                lv = tuple(int(x) for x in check_ver.split(".") if x.isdigit())
+                lt = tuple(int(x) for x in latest_plasma.split(".") if x.isdigit())
+                if lt > lv:
+                    print(f"⚠️  atualização disponível: wallp-plasma {latest_plasma} > {check_ver} — curl -fsSL https://raw.githubusercontent.com/EuSouPedroEmanoel/wallp-plasma/master/quick-install.sh | bash -s -- -y")
+            except Exception:
+                pass
+        if not is_plasma:
+            latest_cli = _latest_tag("wallp-cli")
+            if latest_cli and local:
+                try:
+                    lv = tuple(int(x) for x in local.split(".") if x.isdigit())
+                    lt = tuple(int(x) for x in latest_cli.split(".") if x.isdigit())
+                    if lt > lv:
+                        print(f"⚠️  atualização disponível: wallp-cli {latest_cli} > {local} — curl -fsSL https://raw.githubusercontent.com/EuSouPedroEmanoel/wallp-cli/master/quick-install.sh | bash -s -- -y")
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
 
 def _profile_mode(opts):
     entries_list = entries.load_checked()
@@ -181,6 +266,7 @@ def _profile_mode(opts):
         pass
 
     print("Dica: wallp -ps 10  mostra próximos da agenda com tamanho/duração/loop/integro")
+    _warn_updates()
     # retorna código 1 se tem pesados/faltando para uso em CI
     if heavy or missing:
         import sys

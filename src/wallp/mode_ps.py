@@ -1,4 +1,7 @@
+import json
 import os
+import re
+import urllib.request
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -110,6 +113,88 @@ def _entry_loop_str(e):
         return str(int(v))
     except Exception:
         return str(v)
+
+
+def _local_version():
+    try:
+        import importlib.metadata
+        for pkg in ("wallp", "wallp-plasma"):
+            try:
+                v = importlib.metadata.version(pkg)
+                if v:
+                    return v
+            except Exception:
+                continue
+    except Exception:
+        pass
+    try:
+        p = Path(__file__).parents[2] / "pyproject.toml"
+        if p.is_file():
+            txt = p.read_text()
+            m = re.search(r'version\s*=\s*"([^"]+)"', txt)
+            if m:
+                return m.group(1)
+    except Exception:
+        pass
+    return None
+
+
+def _latest_tag(repo):
+    try:
+        url = f"https://api.github.com/repos/EuSouPedroEmanoel/{repo}/releases/latest"
+        with urllib.request.urlopen(url, timeout=1.5) as r:
+            data = json.loads(r.read().decode())
+            tag = data.get("tag_name", "")
+            return tag.lstrip("v")
+    except Exception:
+        return None
+
+
+def _warn_updates():
+    try:
+        is_plasma = "wallp-plasma" in str(Path(__file__).resolve())
+        local = _local_version()
+        if not local:
+            return
+        latest_plasma = _latest_tag("wallp-plasma")
+        if latest_plasma:
+            plasma_local = None
+            if not is_plasma:
+                for cand in [Path.home() / "dev/wallp/wallp-plasma/pyproject.toml", Path.home() / ".local/share/wallp-plasma/pyproject.toml"]:
+                    if cand.is_file():
+                        try:
+                            txt2 = cand.read_text()
+                            m2 = re.search(r'version\s*=\s*"([^"]+)"', txt2)
+                            if m2:
+                                plasma_local = m2.group(1)
+                                break
+                        except Exception:
+                            continue
+                if plasma_local is None:
+                    plasma_local = latest_plasma
+                check_ver = plasma_local
+            else:
+                check_ver = local
+            try:
+                lv = tuple(int(x) for x in check_ver.split(".") if x.isdigit())
+                lt = tuple(int(x) for x in latest_plasma.split(".") if x.isdigit())
+                if lt > lv:
+                    print(f"⚠️  atualização disponível: wallp-plasma {latest_plasma} > {check_ver} — curl -fsSL https://raw.githubusercontent.com/EuSouPedroEmanoel/wallp-plasma/master/quick-install.sh | bash -s -- -y")
+            except Exception:
+                pass
+        if not is_plasma:
+            latest_cli = _latest_tag("wallp-cli")
+            if latest_cli and local:
+                try:
+                    lv = tuple(int(x) for x in local.split(".") if x.isdigit())
+                    lt = tuple(int(x) for x in latest_cli.split(".") if x.isdigit())
+                    if lt > lv:
+                        print(f"⚠️  atualização disponível: wallp-cli {latest_cli} > {local} — curl -fsSL https://raw.githubusercontent.com/EuSouPedroEmanoel/wallp-cli/master/quick-install.sh | bash -s -- -y")
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
 
 def _ps_mode(opts):
     n = opts.get("ps_count")
@@ -234,3 +319,4 @@ def _ps_mode(opts):
     if any(_entry_size_bytes(e) and _entry_size_bytes(e) > HEAVY_LIMIT for _,_,e in seen):
         print(f"⚠️  Vídeos >{_hum_size(HEAVY_LIMIT)} podem estourar RAM/tmpfs 500MB e aumentar plasmashell (+50MB). Rode wallp --profile para varredura completa.")
     print(f"Dica: wallp -ps 20  |  wallp --profile  |  wallp -al")
+    _warn_updates()
