@@ -9,7 +9,7 @@ from . import entries, log, media, schedule, transitions
 
 # limite para aviso de pesado (mesmo do yt buffer)
 try:
-    HEAVY_LIMIT = int(os.environ.get("WALLP_YT_CACHE_MB", "500")) * 1024 * 1024
+    HEAVY_LIMIT = int(os.environ.get("WALLPHA_YT_CACHE_MB", "500")) * 1024 * 1024
 except ValueError:
     HEAVY_LIMIT = 500 * 1024 * 1024
 
@@ -118,7 +118,7 @@ def _entry_loop_str(e):
 def _local_version():
     try:
         import importlib.metadata
-        for pkg in ("wallp", "wallp-plasma"):
+        for pkg in ("wallpha", "wallpha-plasma"):
             try:
                 v = importlib.metadata.version(pkg)
                 if v:
@@ -152,15 +152,15 @@ def _latest_tag(repo):
 
 def _warn_updates():
     try:
-        is_plasma = "wallp-plasma" in str(Path(__file__).resolve())
+        is_plasma = "wallpha-plasma" in str(Path(__file__).resolve())
         local = _local_version()
         if not local:
             return
-        latest_plasma = _latest_tag("wallp-plasma")
+        latest_plasma = _latest_tag("wallpha-plasma")
         if latest_plasma:
             plasma_local = None
             if not is_plasma:
-                for cand in [Path.home() / "dev/wallp/wallp-plasma/pyproject.toml", Path.home() / ".local/share/wallp-plasma/pyproject.toml"]:
+                for cand in [Path.home() / "dev/wallpha/wallpha-plasma/pyproject.toml", Path.home() / ".local/share/wallpha-plasma/pyproject.toml"]:
                     if cand.is_file():
                         try:
                             txt2 = cand.read_text()
@@ -179,17 +179,17 @@ def _warn_updates():
                 lv = tuple(int(x) for x in check_ver.split(".") if x.isdigit())
                 lt = tuple(int(x) for x in latest_plasma.split(".") if x.isdigit())
                 if lt > lv:
-                    print(f"⚠️  atualização disponível: wallp-plasma {latest_plasma} > {check_ver} — curl -fsSL https://raw.githubusercontent.com/EuSouPedroEmanoel/wallp-plasma/master/quick-install.sh | bash -s -- -y")
+                    print(f"⚠️  atualização disponível: wallpha-plasma {latest_plasma} > {check_ver} — curl -fsSL https://raw.githubusercontent.com/EuSouPedroEmanoel/wallpha-plasma/master/quick-install.sh | bash -s -- -y")
             except Exception:
                 pass
         if not is_plasma:
-            latest_cli = _latest_tag("wallp-cli")
+            latest_cli = _latest_tag("wallpha-cli")
             if latest_cli and local:
                 try:
                     lv = tuple(int(x) for x in local.split(".") if x.isdigit())
                     lt = tuple(int(x) for x in latest_cli.split(".") if x.isdigit())
                     if lt > lv:
-                        print(f"⚠️  atualização disponível: wallp-cli {latest_cli} > {local} — curl -fsSL https://raw.githubusercontent.com/EuSouPedroEmanoel/wallp-cli/master/quick-install.sh | bash -s -- -y")
+                        print(f"⚠️  atualização disponível: wallpha-cli {latest_cli} > {local} — curl -fsSL https://raw.githubusercontent.com/EuSouPedroEmanoel/wallpha-cli/master/quick-install.sh | bash -s -- -y")
                 except Exception:
                     pass
     except Exception:
@@ -211,7 +211,7 @@ def _ps_mode(opts):
     if entries_list is None:
         import sys; sys.exit(1)
     if not entries_list:
-        log.err("nenhum wallpaper no yml. Rode: wallp --init")
+        log.err("nenhum wallpaper no yml. Rode: wallpha --init")
         import sys; sys.exit(1)
 
     now = datetime.now()
@@ -268,9 +268,9 @@ def _ps_mode(opts):
 
     # render — sem N mostra só o atual
     if len(seen) == 1:
-        print(f"Wallpaper atual — {now.strftime('%Y-%m-%d %H:%M:%S')} (wallp -ps):\n")
+        print(f"Wallpaper atual — {now.strftime('%Y-%m-%d %H:%M:%S')} (wallpha -ps):\n")
     else:
-        print(f"Próximos {len(seen)} wallpapers a partir de {now.strftime('%Y-%m-%d %H:%M:%S')} (wallp -ps {n}):\n")
+        print(f"Próximos {len(seen)} wallpapers a partir de {now.strftime('%Y-%m-%d %H:%M:%S')} (wallpha -ps {n}):\n")
     for i, (start, end, e) in enumerate(seen, 1):
         size = _entry_size_bytes(e)
         size_s = _hum_size(size)
@@ -317,6 +317,6 @@ def _ps_mode(opts):
     print()
     # rodapé com dicas
     if any(_entry_size_bytes(e) and _entry_size_bytes(e) > HEAVY_LIMIT for _,_,e in seen):
-        print(f"⚠️  Vídeos >{_hum_size(HEAVY_LIMIT)} podem estourar RAM/tmpfs 500MB e aumentar plasmashell (+50MB). Rode wallp --profile para varredura completa.")
-    print(f"Dica: wallp -ps 20  |  wallp --profile  |  wallp -al")
+        print(f"⚠️  Vídeos >{_hum_size(HEAVY_LIMIT)} podem estourar RAM/tmpfs 500MB e aumentar plasmashell (+50MB). Rode wallpha --profile para varredura completa.")
+    print(f"Dica: wallpha -ps 20  |  wallpha --profile  |  wallpha -al")
     _warn_updates()

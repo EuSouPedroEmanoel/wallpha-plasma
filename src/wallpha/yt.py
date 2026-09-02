@@ -3,10 +3,10 @@ import re
 import subprocess
 from pathlib import Path
 
-from .media import VIDEO_EXTS, WALLP_EXTS
+from .media import VIDEO_EXTS, WALLPHA_EXTS
 from .media import day_shuffled, get_salt
 
-YT_CACHE_MB = int(os.environ.get("WALLP_YT_CACHE_MB", "500"))
+YT_CACHE_MB = int(os.environ.get("WALLPHA_YT_CACHE_MB") or os.environ.get("WALLP_YT_CACHE_MB") or "500")
 
 YT_FORMATS = [
     "bestvideo+bestaudio/best",
@@ -19,7 +19,11 @@ YT_FORMATS = [
 
 def _cache_bytes():
     try:
-        return int(os.environ.get("WALLP_YT_CACHE_MB", str(YT_CACHE_MB))) * 1024 * 1024
+        return int(
+            os.environ.get("WALLPHA_YT_CACHE_MB")
+            or os.environ.get("WALLP_YT_CACHE_MB")
+            or str(YT_CACHE_MB)
+        ) * 1024 * 1024
     except ValueError:
         return YT_CACHE_MB * 1024 * 1024
 
@@ -30,7 +34,7 @@ def _yt_total_bytes():
         return 0
     total = 0
     for p in yt.rglob("*"):
-        if p.is_file() and p.suffix.lower() in WALLP_EXTS:
+        if p.is_file() and p.suffix.lower() in WALLPHA_EXTS:
             try:
                 total += p.stat().st_size
             except OSError:
@@ -73,10 +77,10 @@ def cleanup_prev(prev_path):
 
 def yt_dir():
     """Diretório do buffer do -y/youtube: tmpfs em RAM, limpo pelo sistema no logout.
-    Limite de 500 MiB (YT_CACHE_MB) com limpeza LRU após cada download; `wallp -x cache`
+    Limite de 500 MiB (YT_CACHE_MB) com limpeza LRU após cada download; `wallpha -x cache`
     limpa só o buffer sem tocar no daemon."""
     base = os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
-    d = Path(base) / "wallp"
+    d = Path(base) / "wallpha"
     try:
         d.mkdir(parents=True, exist_ok=True)
     except OSError:
@@ -89,7 +93,7 @@ def clean_yt_buffer(keep=None):
     Mantém `keep` (arquivo recém-baixado) e os mais recentes que caibam em YT_CACHE_MB;
     apaga o resto. Falha de download não limpa. Unlink de arquivo aberto é seguro no Linux.
     Se `keep` for diretório, mantém todos os arquivos dentro dele.
-    Sem `keep`, esvazia o buffer inteiro (usado por `wallp -x` e `wallp -x cache`)."""
+    Sem `keep`, esvazia o buffer inteiro (usado por `wallpha -x` e `wallpha -x cache`)."""
     try:
         yt = yt_dir()
         if not yt.is_dir():
@@ -111,7 +115,7 @@ def clean_yt_buffer(keep=None):
             return
 
         limit = _cache_bytes()
-        files = [p for p in yt.rglob("*") if p.is_file() and p.suffix.lower() in WALLP_EXTS]
+        files = [p for p in yt.rglob("*") if p.is_file() and p.suffix.lower() in WALLPHA_EXTS]
         try:
             files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
         except OSError:
@@ -296,7 +300,7 @@ def download_yt(url, batch_size=7, prev_path=None):
     Se a URL contiver playlist (list=), prepara fila embaralhada sem baixar tudo — baixa sob demanda com LRU.
     Limite de 500 MiB (YT_CACHE_MB) por soma (desconsiderando prev_path que será limpo) com fallback best->worst por filesize.
     `prev_path` é o N-1 a limpar antes de baixar N+1 (caller garante que N está tocando).
-    `wallp -x cache` limpa só o buffer; `wallp -x` esvazia tudo."""
+    `wallpha -x cache` limpa só o buffer; `wallpha -x` esvazia tudo."""
     # Limpa N-1 antes de baixar N+1 se fornecido (caller já verificou que N toca)
     if prev_path:
         cleanup_prev(prev_path)

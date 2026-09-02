@@ -17,7 +17,7 @@ def _fim_txt(loop):
     """Final da mensagem de ativação conforme o modo de loop."""
     from .parse import is_loop_n
     if loop is True:
-        return " — só para com: wallp -x"
+        return " — só para com: wallpha -x"
     if is_loop_n(loop):
         return f" — {loop} passadas e volta à agenda (-a)"
     return " — ao terminar volta à agenda (-a)"

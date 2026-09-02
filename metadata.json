@@ -8,13 +8,13 @@
             }
         ],
         "Category": "",
-        "Description": "Wallpaper unificado imagem + vídeo para wallp — KDE Plasma 6, leve, sem painel",
+        "Description": "Wallpaper unificado imagem + vídeo para wallpha — KDE Plasma 6, leve, sem painel",
         "Icon": "preferences-desktop-wallpaper",
-        "Id": "com.wallp.wallpaper",
+        "Id": "com.wallpha.wallpaper",
         "License": "MIT",
-        "Name": "wallp Wallpaper",
-        "Version": "0.1.0",
-        "Website": "https://github.com/EuSouPedroEmanoel/wallp-cli"
+        "Name": "wallpha Wallpaper",
+        "Version": "2.0.0",
+        "Website": "https://github.com/EuSouPedroEmanoel/wallpha-cli"
     },
     "X-Plasma-API-Minimum-Version": "6.0"
 }

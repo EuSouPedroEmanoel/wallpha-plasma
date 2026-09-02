@@ -3,8 +3,8 @@ import subprocess
 from . import log
 from .paths import LOG_FILE
 
-UNIT = "wallp-daemon.service"
-INSTALLER = "~/dev/Verity/wallp/install.sh"
+UNIT = "wallpha-daemon.service"
+INSTALLER = "~/dev/Verity/wallpha/install.sh"
 
 
 def _start_service():
@@ -35,7 +35,7 @@ def _show_log(opts=None, follow=True):
     n = (opts or {}).get("log_lines") or 50
     logfile = LOG_FILE
     if not logfile.exists():
-        log.err(f"nenhum log ainda ({logfile}); rode wallp -a, -r ou -c primeiro")
+        log.err(f"nenhum log ainda ({logfile}); rode wallpha -a, -r ou -c primeiro")
         return
     args = ["tail"]
     if follow:

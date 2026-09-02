@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .paths import SALT_FILE
 
-WALLP_EXTS = {
+WALLPHA_EXTS = {
     ".mp4", ".mkv", ".webm", ".mov", ".avi", ".m4v", ".mpeg", ".mpg", ".ogg", ".ogv",
     ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".svg", ".avif",
 }
@@ -49,7 +49,7 @@ def _natural_key(name):
 def list_dir_files(path):
     p = Path(path)
     files = [str(f) for f in sorted(p.iterdir(), key=lambda f: _natural_key(f.name))
-             if f.is_file() and f.suffix.lower() in WALLP_EXTS and not f.name.startswith(".")]
+             if f.is_file() and f.suffix.lower() in WALLPHA_EXTS and not f.name.startswith(".")]
     return files
 
 
@@ -62,13 +62,13 @@ def list_tree_files(path):
         for name in sorted(filenames, key=_natural_key):
             if name.startswith("."):
                 continue
-            if Path(name).suffix.lower() in WALLP_EXTS:
+            if Path(name).suffix.lower() in WALLPHA_EXTS:
                 files.append(str(Path(dirpath) / name))
     return files
 
 
 def get_salt():
-    """Salt persistido em ~/.config/wallp/shuffle.json (gerado na 1ª vez)."""
+    """Salt persistido em ~/.config/wallpha/shuffle.json (gerado na 1ª vez)."""
     try:
         if SALT_FILE.exists():
             return json.loads(SALT_FILE.read_text(encoding="utf-8")).get("salt") or ""

@@ -7,7 +7,7 @@ from .daemon_random import _run_random
 from .daemon_schedule import _run_schedule
 
 # compat for old tests that patch daemon.config / daemon.time / daemon._run_schedule etc.
-import wallp.config as config
+import wallpha.config as config
 
 POLL = 15
 

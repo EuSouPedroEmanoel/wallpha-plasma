@@ -62,4 +62,4 @@ def _auto_mode(opts):
     state.set_list(cfg)
     state.set_on(True)
     _start_service()
-    log.info(f"Modo automático ativado para '{opts['target']}' (até: wallp -x).")
+    log.info(f"Modo automático ativado para '{opts['target']}' (até: wallpha -x).")

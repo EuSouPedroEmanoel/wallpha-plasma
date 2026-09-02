@@ -15,7 +15,7 @@ def main():
     if opts["init"]:
         from .paths import DEFAULT_CONFIG
         created = entries.init_template()
-        print(("wallp.yml criado em " if created else "wallp.yml já existe em ") + str(DEFAULT_CONFIG))
+        print(("wallpha.yml criado em " if created else "wallpha.yml já existe em ") + str(DEFAULT_CONFIG))
         return
 
     if opts["daemon"]:
@@ -86,7 +86,7 @@ def _list_mode(opts):
     if entries_list is None:
         sys.exit(1)
     if not entries_list and not entries.LISTAS:
-        log.err("nenhum wallpaper configurado. Rode: wallp --init")
+        log.err("nenhum wallpaper configurado. Rode: wallpha --init")
         sys.exit(1)
 
     pat = opts.get("target")
@@ -135,7 +135,7 @@ def _list_mode(opts):
     if filt_entries:
         print(f"Itens da agenda ({len(filt_entries)}):")
         for e in filt_entries:
-            print(f"  - {entries.format_entry(e)}  [wallp -c \"{e['nome']}\"]")
+            print(f"  - {entries.format_entry(e)}  [wallpha -c \"{e['nome']}\"]")
             if e.get("is_list"):
                 parent_hit = rx is None or bool(rx.search(e.get("nome") or "") or rx.search(e.get("local") or ""))
                 for s in e.get("sub_entries") or []:
@@ -163,7 +163,7 @@ def _list_mode(opts):
             print(f"Listas nomeadas ({len(uniq)}):")
             for lst in uniq:
                 subs = lst.get("sub_entries") or []
-                print(f"  - {lst['nome']} [{len(subs)} itens]  [wallp -c \"{lst['nome']}\"]")
+                print(f"  - {lst['nome']} [{len(subs)} itens]  [wallpha -c \"{lst['nome']}\"]")
                 parent_hit = bool(rx.search(lst.get("nome") or "") or rx.search(lst.get("local") or ""))
                 for s in subs:
                     if rx is not None and not parent_hit:
@@ -173,17 +173,17 @@ def _list_mode(opts):
 
     if rx is None:
         total_nomes = len({e['nome'] for e in entries_list} | set(entries.LISTAS.keys()))
-        print(f"\nTotal: {len(entries_list)} entradas na agenda + {len(entries.LISTAS)} listas nomeadas = {total_nomes} nomes únicos (use: wallp -c <nome>)")
+        print(f"\nTotal: {len(entries_list)} entradas na agenda + {len(entries.LISTAS)} listas nomeadas = {total_nomes} nomes únicos (use: wallpha -c <nome>)")
         if filt_listas or filt_entries:
-            print(f"Dica: filtre com regex: wallp -al \"poke|celeste\"  (case-insensitive, regex Python)")
+            print(f"Dica: filtre com regex: wallpha -al \"poke|celeste\"  (case-insensitive, regex Python)")
 
 
-# Compat: re-export antigos símbolos para testes que fazem `wallp._start_list` etc.
+# Compat: re-export antigos símbolos para testes que fazem `wallpha._start_list` etc.
 try:
     from .mode_change import _apply_named, _change_yml_next, _list_next, _list_slideshow_next, _start_list, _yt_path
     from .mode_random import _random_next
 except ImportError:
     pass
 # _start_service/_stop_service já importados de service, mas garante alias para monkeypatch
-# (tests fazem `monkeypatch.setattr(wallp, "_start_service", ...)`)
+# (tests fazem `monkeypatch.setattr(wallpha, "_start_service", ...)`)
 __all__ = ["main"]

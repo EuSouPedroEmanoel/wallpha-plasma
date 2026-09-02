@@ -4,7 +4,7 @@ from pathlib import Path
 
 from . import yt
 
-_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="wallp-prefetch")
+_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="wallpha-prefetch")
 _lock = threading.Lock()
 _current_future = None
 _current_url = None

@@ -1,8 +1,8 @@
-"""Compat shim: re-exporta símbolos dos módulos novos para manter `from wallp import config` funcionando.
+"""Compat shim: re-exporta símbolos dos módulos novos para manter `from wallpha import config` funcionando.
 Código novo deve importar diretamente dos módulos (entries, parse, media, yt, etc.)."""
 from .entries import LISTAS, TEMPLATE, _apply_sub, _dir_tempo, _list_total, _sub_dur, _sub_index, check_global_default, find_list, format_entry, init_template, list_media_queue, load, load_checked, load_entries
 from .log import _append_log, err, info
-from .media import IMAGE_EXTS, VIDEO_EXTS, WALLP_EXTS, day_shuffled, get_salt, list_dir_files, list_tree_files, match_tipo, video_duration
+from .media import IMAGE_EXTS, VIDEO_EXTS, WALLPHA_EXTS, day_shuffled, get_salt, list_dir_files, list_tree_files, match_tipo, video_duration
 from .parse import DEFAULT_TEMPO, DIA_RANK, WEEKDAYS, _dia_rank, fmt_dia, is_loop_n, matches_day, parse_dia, parse_hora, parse_loop, parse_tempo, parse_time
 from .paths import DEFAULT_CONFIG, LOG_FILE, SALT_FILE
 from .randomcfg import build_random_queue, cfg_seconds, default_scan_roots, random_boundary
@@ -18,7 +18,7 @@ except ImportError:
 
 __all__ = [
     "DEFAULT_CONFIG", "SALT_FILE", "LOG_FILE",
-    "WALLP_EXTS", "VIDEO_EXTS", "IMAGE_EXTS", "DEFAULT_TEMPO", "WEEKDAYS", "DIA_RANK",
+    "WALLPHA_EXTS", "VIDEO_EXTS", "IMAGE_EXTS", "DEFAULT_TEMPO", "WEEKDAYS", "DIA_RANK",
     "_dia_rank", "LISTAS", "TEMPLATE",
     "video_duration", "match_tipo", "list_dir_files", "list_tree_files", "get_salt", "day_shuffled",
     "random_boundary", "default_scan_roots", "cfg_seconds", "build_random_queue",

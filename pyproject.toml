@@ -1,7 +1,7 @@
 [project]
-name = "wallp-plasma"
-version = "1.0.2"
-description = "wallp Plasma backend — daemon + plasmóide unificado imagem+vídeo (KDE Plasma 6)"
+name = "wallpha-plasma"
+version = "2.0.0"
+description = "wallpha Plasma backend — daemon + plasmóide unificado imagem+vídeo (KDE Plasma 6)"
 requires-python = ">=3.10"
 dependencies = [
     "dbus-python>=1.3",
@@ -14,13 +14,13 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["wallp*"]
+include = ["wallpha*"]
 
 [tool.setuptools.package-data]
-wallp = ["assets/*"]
+wallpha = ["assets/*"]
 
 [project.scripts]
-wallp-plasma-daemon = "wallp:main"
+wallpha-plasma-daemon = "wallpha:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

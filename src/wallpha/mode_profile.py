@@ -7,7 +7,7 @@ from pathlib import Path
 from . import entries, log, media
 
 try:
-    HEAVY_LIMIT = int(os.environ.get("WALLP_YT_CACHE_MB", "500")) * 1024 * 1024
+    HEAVY_LIMIT = int(os.environ.get("WALLPHA_YT_CACHE_MB", "500")) * 1024 * 1024
 except ValueError:
     HEAVY_LIMIT = 500 * 1024 * 1024
 
@@ -37,7 +37,7 @@ def _short_path(p):
 def _local_version():
     try:
         import importlib.metadata
-        for pkg in ("wallp", "wallp-plasma"):
+        for pkg in ("wallpha", "wallpha-plasma"):
             try:
                 v = importlib.metadata.version(pkg)
                 if v:
@@ -71,15 +71,15 @@ def _latest_tag(repo):
 
 def _warn_updates():
     try:
-        is_plasma = "wallp-plasma" in str(Path(__file__).resolve())
+        is_plasma = "wallpha-plasma" in str(Path(__file__).resolve())
         local = _local_version()
         if not local:
             return
-        latest_plasma = _latest_tag("wallp-plasma")
+        latest_plasma = _latest_tag("wallpha-plasma")
         if latest_plasma:
             plasma_local = None
             if not is_plasma:
-                for cand in [Path.home() / "dev/wallp/wallp-plasma/pyproject.toml", Path.home() / ".local/share/wallp-plasma/pyproject.toml"]:
+                for cand in [Path.home() / "dev/wallpha/wallpha-plasma/pyproject.toml", Path.home() / ".local/share/wallpha-plasma/pyproject.toml"]:
                     if cand.is_file():
                         try:
                             txt2 = cand.read_text()
@@ -98,17 +98,17 @@ def _warn_updates():
                 lv = tuple(int(x) for x in check_ver.split(".") if x.isdigit())
                 lt = tuple(int(x) for x in latest_plasma.split(".") if x.isdigit())
                 if lt > lv:
-                    print(f"⚠️  atualização disponível: wallp-plasma {latest_plasma} > {check_ver} — curl -fsSL https://raw.githubusercontent.com/EuSouPedroEmanoel/wallp-plasma/master/quick-install.sh | bash -s -- -y")
+                    print(f"⚠️  atualização disponível: wallpha-plasma {latest_plasma} > {check_ver} — curl -fsSL https://raw.githubusercontent.com/EuSouPedroEmanoel/wallpha-plasma/master/quick-install.sh | bash -s -- -y")
             except Exception:
                 pass
         if not is_plasma:
-            latest_cli = _latest_tag("wallp-cli")
+            latest_cli = _latest_tag("wallpha-cli")
             if latest_cli and local:
                 try:
                     lv = tuple(int(x) for x in local.split(".") if x.isdigit())
                     lt = tuple(int(x) for x in latest_cli.split(".") if x.isdigit())
                     if lt > lv:
-                        print(f"⚠️  atualização disponível: wallp-cli {latest_cli} > {local} — curl -fsSL https://raw.githubusercontent.com/EuSouPedroEmanoel/wallp-cli/master/quick-install.sh | bash -s -- -y")
+                        print(f"⚠️  atualização disponível: wallpha-cli {latest_cli} > {local} — curl -fsSL https://raw.githubusercontent.com/EuSouPedroEmanoel/wallpha-cli/master/quick-install.sh | bash -s -- -y")
                 except Exception:
                     pass
     except Exception:
@@ -120,7 +120,7 @@ def _profile_mode(opts):
     if entries_list is None:
         import sys; sys.exit(1)
     if not entries_list and not entries.LISTAS:
-        log.err("nenhum wallpaper no yml. Rode: wallp --init")
+        log.err("nenhum wallpaper no yml. Rode: wallpha --init")
         import sys; sys.exit(1)
 
     # coleta todos os entries + listas nomeadas
@@ -137,7 +137,7 @@ def _profile_mode(opts):
                         if ss not in all_entries:
                             all_entries.append(ss)
 
-    print(f"wallp --profile — varredura de {len(all_entries)} entradas (limite pesado {_hum_size(HEAVY_LIMIT)}):\n")
+    print(f"wallpha --profile — varredura de {len(all_entries)} entradas (limite pesado {_hum_size(HEAVY_LIMIT)}):\n")
 
     heavy = []
     missing = []
@@ -258,14 +258,14 @@ def _profile_mode(opts):
     try:
         from .yt import yt_dir, _yt_total_bytes
         yt_total = _yt_total_bytes()
-        print(f"YT buffer: {_hum_size(yt_total)} / {_hum_size(HEAVY_LIMIT)} em {yt_dir()} (WALLP_YT_CACHE_MB={HEAVY_LIMIT//1024//1024})")
+        print(f"YT buffer: {_hum_size(yt_total)} / {_hum_size(HEAVY_LIMIT)} em {yt_dir()} (WALLPHA_YT_CACHE_MB={HEAVY_LIMIT//1024//1024})")
         if yt_total > HEAVY_LIMIT:
-            print("  ⚠️ buffer acima do limite — rode wallp -x cache para limpar")
+            print("  ⚠️ buffer acima do limite — rode wallpha -x cache para limpar")
         print()
     except Exception:
         pass
 
-    print("Dica: wallp -ps 10  mostra próximos da agenda com tamanho/duração/loop/integro")
+    print("Dica: wallpha -ps 10  mostra próximos da agenda com tamanho/duração/loop/integro")
     _warn_updates()
     # retorna código 1 se tem pesados/faltando para uso em CI
     if heavy or missing:

@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-# wallp-plasma — backend Plasma do wallp: plasmóide + daemon (systemd --user)
+# wallpha-plasma — backend Plasma do wallpha: plasmóide + daemon (systemd --user)
 # Uso: ./install.sh [-y] [--check]
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
-DEST="$HOME/.local/share/plasma/wallpapers/com.wallp.wallpaper"
+DEST="$HOME/.local/share/plasma/wallpapers/com.wallpha.wallpaper"
+# migração wallp → wallpha (v2.0.0)
+if [ -d "$HOME/.local/share/plasma/wallpapers/com.wallp.wallpaper" ] && [ ! -d "$DEST" ]; then
+    # remove antigo após instalar novo (evita falha silenciosa D-Bus)
+    echo "  (migração: com.wallp.wallpaper → com.wallpha.wallpaper — antigo será removido após install)"
+fi
 YES=0; CHECK=0
 for a in "$@"; do case "$a" in -y|--yes) YES=1 ;; --check) CHECK=1 ;; *) echo "uso: $0 [-y] [--check]"; exit 1 ;; esac; done
 have(){ command -v "$1" >/dev/null 2>&1; }
@@ -27,11 +32,11 @@ install_pkg(){
     esac
 }
 
-step "Plasmóide com.wallp.wallpaper"
-if [ -d "/usr/share/plasma/wallpapers/com.wallp.wallpaper" ] || [ -d "$DEST" ]; then
-  ok "plasmoid com.wallp.wallpaper"
+step "Plasmóide com.wallpha.wallpaper"
+if [ -d "/usr/share/plasma/wallpapers/com.wallpha.wallpaper" ] || [ -d "$DEST" ]; then
+  ok "plasmoid com.wallpha.wallpaper"
 else
-  no "plasmoid com.wallp.wallpaper"
+  no "plasmoid com.wallpha.wallpaper"
   if [ "$CHECK" = 1 ]; then ok "rodar sem --check instala"; else
     if command -v cmake >/dev/null 2>&1; then
       echo "  cmake build -> $DEST"
@@ -57,7 +62,7 @@ elif [ "$PM" = "zypper" ]; then
     if rpm -q extra-cmake-modules >/dev/null 2>&1; then ok "extra-cmake-modules"; else no "extra-cmake-modules"; install_pkg "extra-cmake-modules" || true; fi
 fi
 
-step "Daemon Python (wallp-plasma) — funciona em Debian, Fedora, Arch, openSUSE"
+step "Daemon Python (wallpha-plasma) — funciona em Debian, Fedora, Arch, openSUSE"
 if python3 -c "import yaml, dbus" 2>/dev/null; then ok "python3:dbus, yaml"; else
     no "python3:dbus,yaml"
     case "$PM" in
@@ -68,27 +73,35 @@ if python3 -c "import yaml, dbus" 2>/dev/null; then ok "python3:dbus, yaml"; els
 fi
 if [ "$CHECK" != 1 ]; then
   mkdir -p "$HOME/.local/bin"
-  ln -sf "$DIR/bin/wallp" "$HOME/.local/bin/wallp"
-  ln -sf "$DIR/bin/wallp-plasma-daemon" "$HOME/.local/bin/wallp-plasma-daemon"
-  ok "bin wallp -> $HOME/.local/bin/wallp (via wallp-plasma)"
+  ln -sf "$DIR/bin/wallpha" "$HOME/.local/bin/wallpha"
+  ln -sf "$DIR/bin/wallpha-plasma-daemon" "$HOME/.local/bin/wallpha-plasma-daemon"
+  # compat
+  ln -sf "$HOME/.local/bin/wallpha" "$HOME/.local/bin/wallp" 2>/dev/null || true
+  ln -sf "$HOME/.local/bin/wallpha-plasma-daemon" "$HOME/.local/bin/wallp-plasma-daemon" 2>/dev/null || true
+  # remove plasmoid antigo se existir (evita D-Bus falha silenciosa)
+  if [ -d "$HOME/.local/share/plasma/wallpapers/com.wallp.wallpaper" ]; then
+      rm -rf "$HOME/.local/share/plasma/wallpapers/com.wallp.wallpaper" 2>/dev/null || true
+      echo "  (removido plasmoid antigo com.wallp.wallpaper)"
+  fi
+  ok "bin wallpha -> $HOME/.local/bin/wallpha (via wallpha-plasma, compat wallp)"
   # opcional venv
   if [ ! -d "$DIR/.venv" ]; then python3 -m venv "$DIR/.venv" 2>/dev/null && "$DIR/.venv/bin/pip" install -q pytest pyyaml 2>/dev/null || true; fi
 fi
 
-step "Daemon systemd (wallp-daemon.service)"
-UNIT="wallp-daemon.service"
+step "Daemon systemd (wallpha-daemon.service)"
+UNIT="wallpha-daemon.service"
 UNIT_DIR="$HOME/.config/systemd/user"
 mkdir -p "$UNIT_DIR"
 if [ "$CHECK" != 1 ]; then
   cat > "$UNIT_DIR/$UNIT" <<EOF
 [Unit]
-Description=wallp Plasma — daemon de wallpaper (agenda + com.wallp.wallpaper)
+Description=wallpha Plasma — daemon de wallpaper (agenda + com.wallpha.wallpaper)
 After=plasma-plasmashell.service
 PartOf=plasma-plasmashell.service
 
 [Service]
 Type=simple
-ExecStart=$HOME/.local/bin/wallp-plasma-daemon
+ExecStart=$HOME/.local/bin/wallpha-plasma-daemon
 Restart=on-failure
 RestartSec=5
 
@@ -97,16 +110,16 @@ WantedBy=default.target
 EOF
   systemctl --user daemon-reload 2>/dev/null || true
   systemctl --user enable "$UNIT" 2>/dev/null || true
-  ok "daemon habilitado ($UNIT_DIR/$UNIT -> $HOME/.local/bin/wallp-plasma-daemon)"
+  ok "daemon habilitado ($UNIT_DIR/$UNIT -> $HOME/.local/bin/wallpha-plasma-daemon)"
 else
   if systemctl --user is-enabled "$UNIT" >/dev/null 2>&1; then ok "daemon habilitado"; else no "daemon não habilitado"; fi
 fi
 
 if [ "$CHECK" != 1 ]; then
   echo ""
-  echo "Comandos (daemon agora em wallp-plasma):"
-  echo "  wallp -c [caminho|nome]  (via wallp-plasma)"
-  echo "  wallp -a / wallp -x / wallp -r"
+  echo "Comandos (daemon agora em wallpha-plasma):"
+  echo "  wallpha -c [caminho|nome]  (via wallpha-plasma)"
+  echo "  wallpha -a / wallpha -x / wallpha -r"
 else
   echo ""
   echo "--check ok"

@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "src"))
-from wallp import main
-# daemon mode: wallp-plasma-daemon == wallp -d
-sys.argv = [sys.argv[0], "-d"]
+from wallpha import main
 main()

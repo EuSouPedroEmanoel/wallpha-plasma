@@ -1,11 +1,11 @@
 /*
- * wallp Wallpaper — plasmóide unificado imagem + vídeo, KDE Plasma 6
+ * wallpha Wallpaper — plasmóide unificado imagem + vídeo, KDE Plasma 6
  * Leve: sem painel de config, sem blur/crossfade/effects. Compat com
  *  - org.kde.image (Image)
  *  - luisbocanegra.smart.video.wallpaper.reborn (VideoUrls)
- *  + Source unificado file:// (preferido pelo wallp-cli novo)
+ *  + Source unificado file:// (preferido pelo wallpha-cli novo)
  *
- * wallp-cli manda via D-Bus org.kde.PlasmaShell.setWallpaper("com.wallp.wallpaper", {Image, Source, VideoUrls, MuteMode, Volume, Loop, FillMode})
+ * wallpha-cli manda via D-Bus org.kde.PlasmaShell.setWallpaper("com.wallpha.wallpaper", {Image, Source, VideoUrls, MuteMode, Volume, Loop, FillMode})
  */
 
 import QtQuick
@@ -16,11 +16,11 @@ WallpaperItem {
     id: root
     anchors.fill: parent
 
-    // ——— props wallp ———
+    // ——— props wallpha ———
     property string cfgSource: wallpaper.configuration.Source || ""
     property string cfgImage: wallpaper.configuration.Image || ""
     property string cfgVideoUrls: wallpaper.configuration.VideoUrls || "[]"
-    property int cfgMuteMode: wallpaper.configuration.MuteMode // 5=mudo (padrão wallp), 4=som
+    property int cfgMuteMode: wallpaper.configuration.MuteMode // 5=mudo (padrão wallpha), 4=som
     property double cfgVolume: wallpaper.configuration.Volume !== undefined ? wallpaper.configuration.Volume : 1.0
     property bool cfgLoop: wallpaper.configuration.Loop || false
     property int cfgFillMode: wallpaper.configuration.FillMode !== undefined ? wallpaper.configuration.FillMode : 2 // PreserveAspectCrop
@@ -92,13 +92,13 @@ WallpaperItem {
         videoOutput: videoOut
         audioOutput: audioOut
         onErrorOccurred: function(error, errorString) {
-            console.warn("wallp: video error", error, errorString, resolvedSrc);
+            console.warn("wallpha: video error", error, errorString, resolvedSrc);
         }
     }
 
     AudioOutput {
         id: audioOut
-        muted: cfgMuteMode === 5 // wallp: 5=mudo, 4=som (compat Reborn)
+        muted: cfgMuteMode === 5 // wallpha: 5=mudo, 4=som (compat Reborn)
         volume: cfgVolume
     }
 
@@ -141,6 +141,6 @@ WallpaperItem {
         if (isVideo && resolvedSrc) player.play();
     }
 
-    // debug leve: plasmashell --replace ou journalctl --user -f | grep wallp
-    // console.log("wallp: src", resolvedSrc, "isVideo", isVideo, "loop", cfgLoop, "mute", cfgMuteMode)
+    // debug leve: plasmashell --replace ou journalctl --user -f | grep wallpha
+    // console.log("wallpha: src", resolvedSrc, "isVideo", isVideo, "loop", cfgLoop, "mute", cfgMuteMode)
 }

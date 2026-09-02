@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
-project(wallp-plasma VERSION 0.1.0)
+project(wallpha-plasma VERSION 2.0.0)
 
-# wallp-plasma — backend Plasma do wallp (wallp = wallpaper) — plasmóide unificado imagem+vídeo, leve, sem painel
+# wallpha-plasma — backend Plasma do wallpha (wallpha = wallpaper) — plasmóide unificado imagem+vídeo, leve, sem painel
 # Instala via: cmake -B build && cmake --install build --prefix ~/.local
 # ou: kpackagetool6 -t Plasma/Wallpaper --install .
 
@@ -22,5 +22,5 @@ endif()
 
 # Plasmóide QML puro (KPackage) — sem C++. Só instala metadata + contents.
 # Funciona com ECM presente ou não (fallback GNUInstallDirs).
-install(FILES metadata.json DESTINATION ${KDE_INSTALL_PLASMAWALLPAPERDIR}/com.wallp.wallpaper)
-install(DIRECTORY contents/ DESTINATION ${KDE_INSTALL_PLASMAWALLPAPERDIR}/com.wallp.wallpaper/contents)
+install(FILES metadata.json DESTINATION ${KDE_INSTALL_PLASMAWALLPAPERDIR}/com.wallpha.wallpaper)
+install(DIRECTORY contents/ DESTINATION ${KDE_INSTALL_PLASMAWALLPAPERDIR}/com.wallpha.wallpaper/contents)

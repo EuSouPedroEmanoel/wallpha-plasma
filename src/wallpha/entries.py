@@ -7,9 +7,9 @@ from .parse import DEFAULT_TEMPO, _dia_rank, fmt_dia, is_loop_n, matches_day, pa
 from .paths import DEFAULT_CONFIG
 LISTAS = {}
 TEMPLATE = """\
-# wallp — agenda de wallpapers
+# wallpha — agenda de wallpapers
 # cada item tem:
-#   nome:    nome (usado no `wallp -c <nome>`)
+#   nome:    nome (usado no `wallpha -c <nome>`)
 #   local:   caminho do wallpaper (vídeo, imagem ou pasta com type: diretório)
 #   type:    diretório (opcional) — local é uma pasta; tempo = intervalo entre arquivos
 #   loop:    true/N/false (opcional) — diretório/lista: true cicla infinito, N cicla
@@ -25,7 +25,7 @@ TEMPLATE = """\
 #              DD-MM-AAAA                    = só nesse dia (ex.: 20-12-2026)
 #            sem dia, vale todos os dias
 #   default: true (opcional) — o padrão, preenche os intervalos vazios.
-#            Precisa de um default global (sem dia) pra rodar `wallp -a`;
+#            Precisa de um default global (sem dia) pra rodar `wallpha -a`;
 #            defaults com `dia` valem só no dia deles (o mais específico vence).
 #   shuffled: true (opcional, em diretórios) — ordem aleatória (mesma o dia todo,
 #            muda à meia-noite; o sorteio usa um salt em shuffle.json)
@@ -34,7 +34,7 @@ TEMPLATE = """\
 #            item da agenda que cicla os sub-itens; sem, os sub-itens entram direto
 #            na agenda (a lista é só o nome do grupo). Listas podem ter listas dentro
 #            (sub-item com `list:`); subs sem `dia` herdam o `dia` da lista.
-#            `wallp -c <nome-da-lista>` roda só a lista; `wallp -a <nome>` roda ela
+#            `wallpha -c <nome-da-lista>` roda só a lista; `wallpha -a <nome>` roda ela
 #            persistente.
 #   No dia: rotação sem hora do dia mais específico roda primeiro; se terminar (sem
 #   loop), segue pro genérico e depois pros defaults, até o default global.

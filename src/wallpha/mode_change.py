@@ -149,7 +149,7 @@ def _start_list(lista, opts):
         snd = "" if som else ", mudo"
         print(f"Lista '{lista['nome']}' (slideshow): {n} itens{qtd_txt}{extra}{snd}{_fim_txt(loop)}")
     else:
-        fim = " — loop até: wallp -x" if loop is True else (
+        fim = " — loop até: wallpha -x" if loop is True else (
             f" — {loop} passadas e volta à agenda" if parse.is_loop_n(loop) else " — uma passada e volta à agenda"
         )
         log.info(f"Lista '{lista['nome']}' ativada: {n} itens{fim}")
@@ -163,7 +163,7 @@ def _list_next():
     if entries_list is None:
         sys.exit(1)
     if not entries_list:
-        log.err("nenhum wallpaper configurado. Rode: wallp --init")
+        log.err("nenhum wallpaper configurado. Rode: wallpha --init")
         sys.exit(1)
 
     lista = entries.find_list(cfg["nome"])
@@ -321,7 +321,7 @@ def _change_yml_next():
     if entries_list is None:
         sys.exit(1)
     if not entries_list:
-        log.err("nenhum wallpaper configurado. Rode: wallp --init")
+        log.err("nenhum wallpaper configurado. Rode: wallpha --init")
         sys.exit(1)
 
     last = state.get_last()

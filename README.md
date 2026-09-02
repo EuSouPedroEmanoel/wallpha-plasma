@@ -1,15 +1,21 @@
-# wallp-plasma
+# wallpha-plasma
 
-Backend Plasma do `wallp` — plasmóide **unificado imagem + vídeo** para KDE Plasma 6, leve.
+> **Renomeado de `wallp-plasma` → `wallpha-plasma` em v2.0.0** para evitar colisão com outros projetos `wallp`. Plasmoid ID agora é `com.wallpha.wallpaper` (antigo `com.wallp.wallpaper` removido no install). Veja nota completa no `wallpha-cli`.
 
-> `wallp` = wallpaper literalmente, então `wallp-plasma` já é o wallpaper no Plasma.
+> ⚠️ **Aviso:** O motor legacy `org.kde.image` para imagens será **removido na v3.0**. A partir daí apenas `com.wallpha.wallpaper` será suportado.
+
+> 🖥️ **Em breve:** `wallpha-gui` chega em **20/10/2026** — GUI para `wallpha.yml`.
+
+Backend Plasma do `wallpha` — plasmóide **unificado imagem + vídeo** para KDE Plasma 6, leve.
+
+> `wallpha` = wallpaper literalmente, então `wallpha-plasma` já é o wallpaper no Plasma.
 
 *   **KDE only** (Wayland/X11) — `WallpaperItem` QML + `QtMultimedia`/`ffmpeg`
-*   **Sem painel de config** — tudo via `wallp.yml` + `wallp -c/-a/-r/-n/-x`
+*   **Sem painel de config** — tudo via `wallpha.yml` + `wallpha -c/-a/-r/-n/-x`
 *   **Compatível** com `org.kde.image` (`Image`) e `luisbocanegra.smart.video.wallpaper.reborn` (`VideoUrls`)
 *   **Novo preferido:** `Source` `file://` unificado
 
-Este repo é o **backend de render**; a lógica de agenda/daemon/YouTube continua em [`wallp-cli`](../wallp-cli).
+Este repo é o **backend de render**; a lógica de agenda/daemon/YouTube continua em [`wallpha-cli`](../wallpha-cli).
 
 ## Instalação
 
@@ -23,24 +29,24 @@ sudo pacman -S --needed extra-cmake-modules qt6-declarative qt6-multimedia qt6-m
 cmake -B build --install-prefix ~/.local
 cmake --build build
 cmake --install build
-# -> ~/.local/share/plasma/wallpapers/com.wallp.wallpaper
-kpackagetool6 -t Plasma/Wallpaper --list | grep wallp
+# -> ~/.local/share/plasma/wallpapers/com.wallpha.wallpaper
+kpackagetool6 -t Plasma/Wallpaper --list | grep wallpha
 ```
 
 ### 3. Teste rápido (após instalar)
 ```bash
-# via wallp-cli (recomendado)
-wallp -c ~/Imagens/foto.jpg
-wallp -c ~/Vídeos/a.mp4
-wallp -c ~/Vídeos --type diretório  # se usar wallp.yml
+# via wallpha-cli (recomendado)
+wallpha -c ~/Imagens/foto.jpg
+wallpha -c ~/Vídeos/a.mp4
+wallpha -c ~/Vídeos --type diretório  # se usar wallpha.yml
 # ou manual D-Bus:
-qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.setWallpaper com.wallp.wallpaper '{"Source":"file:///home/pedro/Imagens/foto.jpg"}' 0
+qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.setWallpaper com.wallpha.wallpaper '{"Source":"file:///home/pedro/Imagens/foto.jpg"}' 0
 ```
 
 ## Estrutura
 
 ```
-metadata.json                 # KPlugin Id: com.wallp.wallpaper, Plasma/Wallpaper
+metadata.json                 # KPlugin Id: com.wallpha.wallpaper, Plasma/Wallpaper
 contents/
   config/main.xml             # props: Image, Source, VideoUrls, MuteMode, Volume, Loop, FillMode
   ui/main.qml                 # Image + VideoOutput/MediaPlayer/AudioOutput, < 100 linhas
@@ -49,7 +55,7 @@ CMakeLists.txt                # install para ${KDE_INSTALL_PLASMAWALLPAPERDIR}
 
 ## Props `wallpaper.configuration`
 
-| nome | tipo | wallp.yml | valor |
+| nome | tipo | wallpha.yml | valor |
 |------|------|-----------|-------|
 | `Source` | String | `local` | `file://...` preferido |
 | `Image` | String | `local` (imagem) | compat `org.kde.image` |
@@ -61,14 +67,14 @@ CMakeLists.txt                # install para ${KDE_INSTALL_PLASMAWALLPAPERDIR}
 
 `main.qml` resolve: `Source` > `VideoUrls` > `Image`, detecta vídeo por extensão e mostra `Image` ou `VideoOutput`.
 
-## wallp-cli
+## wallpha-cli
 
-Troque em `wallp-cli/src/wallp/apply.py`:
+Troque em `wallpha-cli/src/wallpha/apply.py`:
 ```py
-PLUGIN = "com.wallp.wallpaper"
+PLUGIN = "com.wallpha.wallpaper"
 def plugin_for(p): return PLUGIN
 ```
-`install.sh` deve chamar este build antes de `systemctl --user restart wallp-daemon.service`.
+`install.sh` deve chamar este build antes de `systemctl --user restart wallpha-daemon.service`.
 
 ## Licença
 

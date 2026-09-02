@@ -1,18 +1,19 @@
 import json
 from pathlib import Path
 
-PLUGIN = "com.wallp.wallpaper"  # wallp unificado imagem+vídeo (KDE Plasma 6)
+PLUGIN = "com.wallpha.wallpaper"  # wallpha unificado imagem+vídeo (KDE Plasma 6)
 PLUGIN_VIDEO = PLUGIN
 PLUGIN_IMAGE = PLUGIN  # unifica: mesmo plasmóide resolve por extensão
 # legado para fallback se novo plasmóide não estiver instalado
+# DEPRECATED: PLUGIN_IMAGE_LEGACY (org.kde.image) será removido na v3.0 — imagens passarão a usar só com.wallpha.wallpaper
 PLUGIN_VIDEO_LEGACY = "luisbocanegra.smart.video.wallpaper.reborn"
-PLUGIN_IMAGE_LEGACY = "org.kde.image"
+PLUGIN_IMAGE_LEGACY = "org.kde.image"  # DEPRECATED v3.0
 
 VIDEO_EXTS = {".mp4", ".mkv", ".webm", ".mov", ".avi", ".m4v", ".mpeg", ".mpg", ".ogg", ".ogv"}
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".svg", ".avif"}
 
 
-def _is_wallp_plugin_installed():
+def _is_wallpha_plugin_installed():
     p1 = Path.home() / ".local/share/plasma/wallpapers" / PLUGIN
     p2 = Path("/usr/share/plasma/wallpapers") / PLUGIN
     return p1.is_dir() or p2.is_dir()
@@ -39,10 +40,20 @@ def _screens(iface):
 
 
 def plugin_for(path):
-    # wallp unificado: sempre PLUGIN; fallback só se novo não estiver instalado
-    if _is_wallp_plugin_installed():
+    # wallpha unificado: sempre PLUGIN; fallback só se novo não estiver instalado
+    if _is_wallpha_plugin_installed():
         return PLUGIN
     ext = Path(path).suffix.lower()
+    # log explícito para evitar falha silenciosa D-Bus + aviso de remoção v3.0 do motor legacy de imagem
+    try:
+        from . import log as _log
+
+        if ext in VIDEO_EXTS:
+            _log.err(f"plasmóide {PLUGIN} não encontrado — usando fallback {PLUGIN_VIDEO_LEGACY} (rode install.sh -y)")
+        else:
+            _log.err(f"[DEPRECATED v3.0] plasmóide {PLUGIN} não encontrado — usando fallback legacy {PLUGIN_IMAGE_LEGACY} para imagem; será removido na v3.0 (instale {PLUGIN} via install.sh -y)")
+    except Exception:
+        pass
     if ext in VIDEO_EXTS:
         return PLUGIN_VIDEO_LEGACY
     return PLUGIN_IMAGE_LEGACY
@@ -65,7 +76,7 @@ def _video_params(uri, loop=False, som=False, integro=False):
         "ResumeLastVideo": True,
         "MuteMode": 4 if som else 5,
         "Volume": 1.0,
-        # wallp unificado: Source é preferido, VideoUrls/Image mantidos para compat
+        # wallpha unificado: Source é preferido, VideoUrls/Image mantidos para compat
         "Source": uri,
         "Loop": bool(loop),
     }
@@ -82,7 +93,7 @@ def apply(path, screen=None, loop=False, som=False, integro=False):
         raise FileNotFoundError(f"arquivo não encontrado: {p}")
     uri = p.as_uri()
     plugin = plugin_for(p)
-    # unificado wallp: manda Source + compat Image/VideoUrls para o mesmo plugin
+    # unificado wallpha: manda Source + compat Image/VideoUrls para o mesmo plugin
     if plugin == PLUGIN:
         is_video = p.suffix.lower() in VIDEO_EXTS
         if is_video:

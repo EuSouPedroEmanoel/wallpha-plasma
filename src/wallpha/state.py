@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state")) / "wallp"
+STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state")) / "wallpha"
 STATE_FILE = STATE_DIR / "auto"
 RANDOM_FILE = STATE_DIR / "random"
 LIST_FILE = STATE_DIR / "list"
