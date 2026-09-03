@@ -13,7 +13,7 @@ if [[ -n "${GITHUB_REF_NAME:-}" && "$GITHUB_REF_NAME" != "v$VERSION" ]]; then
     echo "A tag $GITHUB_REF_NAME não corresponde à versão v$VERSION" >&2
     exit 1
 fi
-if ! rg -q "project\(wallpha-plasma VERSION $VERSION\)" "$ROOT_DIR/CMakeLists.txt" || ! rg -q '"Version": "'"$VERSION"'"' "$ROOT_DIR/metadata.json"; then
+if ! grep -Eq "project\(wallpha-plasma VERSION $VERSION\)" "$ROOT_DIR/CMakeLists.txt" || ! grep -Eq '"Version": "'"$VERSION"'"' "$ROOT_DIR/metadata.json"; then
     echo "Versões de CMake/metadata não correspondem a $VERSION" >&2
     exit 1
 fi
