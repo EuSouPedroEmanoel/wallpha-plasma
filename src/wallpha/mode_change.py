@@ -324,35 +324,10 @@ def _change_yml_next():
         log.err("nenhum wallpaper configurado. Rode: wallpha --init")
         sys.exit(1)
 
+    now = datetime.now()
     last = state.get_last()
-    nxt = None
-    if isinstance(last, list) and len(last) >= 2:
-        for e in entries_list:
-            if e["local"] == last[0] and e["nome"] == last[1]:
-                if e.get("is_list"):
-                    nxt = transitions.advance_in_list(e, last[2] if len(last) > 2 else None)
-                elif e["is_dir"]:
-                    nf = transitions.advance_in_dir(e, last[2] if len(last) > 2 else None)
-                    nxt = dict(e)
-                    nxt["arquivo"] = nf or e["files"][0]
-                else:
-                    nxt = transitions.next_after(entries_list, [e["local"], e["nome"]])
-                break
-        else:
-            if last[0]:
-                for e in entries_list:
-                    if e["local"] == last[0]:
-                        if e.get("is_list"):
-                            nxt = transitions.advance_in_list(e, last[2] if len(last) > 2 else None)
-                        elif e["is_dir"]:
-                            nf = transitions.advance_in_dir(e, last[2] if len(last) > 2 else None)
-                            nxt = dict(e)
-                            nxt["arquivo"] = nf or e["files"][0]
-                        else:
-                            nxt = transitions.next_after(entries_list, [e["local"], e["nome"]])
-                        break
+    nxt = transitions.next_from_last(entries_list, last, now)
     if nxt is None:
-        now = datetime.now()
         from . import schedule
         active = schedule.resolve_active(entries_list, now)
         nxt = transitions.next_entry(entries_list, active, now)
@@ -369,10 +344,14 @@ def _change_yml_next():
     except Exception as e:
         log.err(f"erro: {e}")
         sys.exit(1)
-    if nxt.get("is_list"):
-        state.set_last([nxt["local"], nxt["nome"], nxt.get("sub_nome")])
-    else:
-        state.set_last([nxt["local"], nxt["nome"], nxt["arquivo"]])
+    key = transitions.last_key(nxt)
+    state.set_last(key)
+    if state.is_on() and state.get_random() is None and state.get_list() is None:
+        until = transitions.next_transition(entries_list, now)
+        if until is not None:
+            state.set_override({"key": key, "until": until.isoformat()})
+        else:
+            state.clear_override()
     log.info(f"Wallpaper aplicado: {path} ({plugin})")
 
 

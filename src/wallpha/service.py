@@ -4,7 +4,7 @@ from . import log
 from .paths import LOG_FILE
 
 UNIT = "wallpha-daemon.service"
-INSTALLER = "~/dev/Verity/wallpha/install.sh"
+INSTALLER = "~/dev/wallpha/wallpha-plasma/install.sh"
 
 
 def _start_service():

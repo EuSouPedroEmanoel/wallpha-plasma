@@ -17,6 +17,7 @@ def _auto_mode(opts):
     if not opts["target"]:
         state.clear_list()
         state.clear_random()
+        state.clear_override()
         state.set_on(True)
         _start_service()
         log.info("Modo automático ativado (agenda do yml).")
@@ -59,6 +60,7 @@ def _auto_mode(opts):
         return
     state.clear_pos()
     state.clear_random()
+    state.clear_override()
     state.set_list(cfg)
     state.set_on(True)
     _start_service()

@@ -17,6 +17,25 @@ Backend Plasma do `wallpha` — plasmóide **unificado imagem + vídeo** para KD
 
 Este repo é o **backend de render**; a lógica de agenda/daemon/YouTube continua em [`wallpha-cli`](../wallpha-cli).
 
+## Desenvolvimento do runtime Python
+
+`src/wallpha/` é compartilhado conceitualmente com `wallpha-cli/src/wallpha/`. O daemon do
+Plasma é a implementação canônica; o CLI mantém uma camada de delegação/fallback. Antes de
+alterar módulos compartilhados, valide que não surgiu divergência acidental:
+
+```bash
+./tools/check-runtime-sync.sh
+```
+
+As diferenças permitidas são `__init__.py`, `daemon.py`, `mode_ps.py` e `service.py`; qualquer
+outra divergência deve ser aplicada nos dois componentes ou deliberadamente adicionada ao contrato.
+
+## Publicação
+
+Uma tag `vX.Y.Z` executa o build CMake, confere a paridade do runtime contra a tag equivalente de
+`wallpha-cli`, gera os arquivos `.tar.gz` e `.zip` e publica a release. Publique a tag da CLI antes
+da tag do Plasma para que essa verificação consiga baixar a mesma versão.
+
 ## Instalação
 
 ### 1. Dependências (Arch)

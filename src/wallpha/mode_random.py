@@ -10,6 +10,7 @@ DEFAULT_TEMPO = "30m"
 
 
 def _random_mode(opts):
+    state.clear_override()
     integro = bool(opts["integro"])
     tempo = None
     tsrc = opts["tempo"] or (None if integro else DEFAULT_TEMPO)

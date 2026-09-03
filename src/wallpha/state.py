@@ -9,6 +9,7 @@ LIST_FILE = STATE_DIR / "list"
 LAST_FILE = STATE_DIR / "last"
 POS_FILE = STATE_DIR / "pos"
 CURRENT_FILE = STATE_DIR / "current"
+OVERRIDE_FILE = STATE_DIR / "override"
 
 
 def set_on(on):
@@ -71,6 +72,27 @@ def get_last():
         return json.loads(LAST_FILE.read_text(encoding="utf-8"))
     except (FileNotFoundError, OSError, json.JSONDecodeError):
         return None
+
+
+def set_override(cfg):
+    """Persiste um avanço manual da agenda até a próxima transição natural."""
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    OVERRIDE_FILE.write_text(json.dumps(cfg, ensure_ascii=False), encoding="utf-8")
+
+
+def get_override():
+    try:
+        data = json.loads(OVERRIDE_FILE.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else None
+    except (FileNotFoundError, OSError, json.JSONDecodeError):
+        return None
+
+
+def clear_override():
+    try:
+        OVERRIDE_FILE.unlink()
+    except (FileNotFoundError, OSError):
+        pass
 
 
 def set_pos(pos):

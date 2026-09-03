@@ -142,15 +142,102 @@ def next_entry(entries, active, now):
         e["file_index"] = idx
         e["arquivo"] = e["files"][idx]
         return e
+    return next_after(entries, [active["local"], active["nome"]], now)
+
+
+def _next_hour_entry(entries, active, now):
+    """Próximo slot de hora depois do ativo; None quando a agenda volta à rotação."""
+    today = [e for e in entries if matches_day(e, now.date())]
+    slots = sch._hora_slots(today, now.date())
+    current = next(
+        (i for i, (start, end, e) in enumerate(slots)
+         if start <= now < end and (e["local"], e["nome"]) == (active["local"], active["nome"])),
+        None,
+    )
+    if current is None:
+        return None
+    for start, _end, _entry in slots[current + 1:]:
+        candidate = sch.resolve_active(today, start)
+        if candidate is not None:
+            return candidate
+    return None
+
+
+def entry_from_last(entries, key, now=None):
+    """Reconstrói uma entrada normalizada a partir da chave persistida em state.last."""
+    if not isinstance(key, (list, tuple)) or len(key) < 2:
+        return None
+    local, nome = key[0], key[1]
+    detail = key[2] if len(key) > 2 else None
+    for source in entries:
+        if source.get("local") != local or source.get("nome") != nome:
+            continue
+        if source.get("is_list"):
+            return next_sub_by_nome(source, detail)
+        if source.get("is_dir"):
+            files = source.get("files") or []
+            if detail not in files:
+                return None
+            out = dict(source)
+            out["file_index"] = files.index(detail)
+            out["arquivo"] = detail
+            return out
+        return dict(source)
+    return None
+
+
+def last_key(entry):
+    """Chave estável usada por state.last e pelo override manual da agenda."""
+    detail = entry.get("sub_nome") if entry.get("is_list") else entry.get("arquivo")
+    return [entry.get("local"), entry.get("nome"), detail]
+
+
+def next_from_last(entries, key, now=None):
+    """Avança uma chave persistida, preservando diretórios e listas."""
+    now = now or datetime.now()
+    active = entry_from_last(entries, key, now)
+    if active is None:
+        return None
+    if active.get("is_list"):
+        parent = next((e for e in entries if e.get("local") == active.get("local") and e.get("nome") == active.get("nome")), None)
+        return advance_in_list(parent, active.get("sub_nome"), now) if parent else None
+    if active.get("is_dir"):
+        nxt_file = advance_in_dir(active, active.get("arquivo"))
+        if nxt_file is None:
+            return None
+        out = dict(active)
+        out["file_index"] = active["files"].index(nxt_file)
+        out["arquivo"] = nxt_file
+        return out
+    return next_after(entries, [active["local"], active["nome"]], now)
+
+
+def next_after(entries, key, now=None):
+    """Próximo wallpaper ativo hoje, depois do item (local, nome) de `key`.
+    Itens por hora avançam pelo próximo slot; os demais seguem a ordem de rotação."""
+    if not entries:
+        return None
+    if not isinstance(key, (list, tuple)) or len(key) != 2:
+        return None
+    now = now or datetime.now()
     day = now.date()
     today = [e for e in entries if matches_day(e, day)]
     if not today:
         today = entries
+    local, nome = key
+    active = next((e for e in today if (e["local"], e["nome"]) == (local, nome)), None)
+    if active is None:
+        return None
+    if active is not None and active.get("hora_start") is not None:
+        scheduled = _next_hour_entry(today, active, now)
+        if scheduled is not None:
+            return scheduled
+        rot = sch._cycle_order(today) or []
+        return dict(rot[0]) if rot else None
     rot = sch._cycle_order(today) or today
-    key = (active["local"], active["nome"])
-    idx = next((i for i, e in enumerate(rot) if (e["local"], e["nome"]) == key), None)
+    idx = next((i for i, e in enumerate(rot) if (e["local"], e["nome"]) == (local, nome)), None)
     if idx is None:
-        return dict(rot[0])
+        return None
     return dict(rot[(idx + 1) % len(rot)])
 
 
@@ -218,25 +305,6 @@ def find_by_name(entries, name):
     for e in entries:
         if e["nome"].lower() == name:
             return dict(e)
-    return None
-
-
-def next_after(entries, key, now=None):
-    """Próximo wallpaper ativo hoje, depois do item (local, nome) de `key`.
-    Segue a ordem de especificidade do dia (específico primeiro)."""
-    if not entries:
-        return None
-    if isinstance(key, (list, tuple)) and len(key) == 2:
-        now = now or datetime.now()
-        day = now.date()
-        today = [e for e in entries if matches_day(e, day)]
-        if not today:
-            today = entries
-        rot = sch._cycle_order(today) or today
-        local, nome = key
-        for i, e in enumerate(rot):
-            if e["local"] == local and e["nome"] == nome:
-                return dict(rot[(i + 1) % len(rot)])
     return None
 
 

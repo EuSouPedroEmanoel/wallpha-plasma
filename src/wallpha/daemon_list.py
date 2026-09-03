@@ -3,6 +3,10 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from . import apply, entries, log, media, parse, randomcfg, schedule, state, transitions, yt, yt_prefetch
 POLL = 15
+
+
+def _remember(active):
+    state.set_last(transitions.last_key(active))
 def _get_yt_or_prefetch(url, prev_path=None):
     if not url or "youtu" not in url.lower():
         return url
@@ -267,6 +271,7 @@ def _run_list_schedule(subs, cfg):
                     )
                     log.err(f"aplicando: {entries.format_entry(active)} ({plugin})")
                     last_applied = key
+                    _remember(active)
                     if yt._is_in_yt_dir(path):
                         if current_yt_path and current_yt_path != path: prev_yt_path = current_yt_path
                         current_yt_path = path
@@ -299,6 +304,7 @@ def _apply_named(sub, prev_path=None):
             integro=bool(sub.get("integro")),
         )
         log.err(f"aplicando: {entries.format_entry(sub)} ({plugin})")
+        _remember(sub)
         return path
     except Exception as e:
         log.err(f"erro ao aplicar {sub.get('arquivo')}: {e}")

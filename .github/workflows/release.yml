@@ -1,0 +1,25 @@
+name: Release Plasma
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest pyyaml
+      - run: git clone --depth 1 --branch "$GITHUB_REF_NAME" https://github.com/EuSouPedroEmanoel/wallpha-cli.git "$RUNNER_TEMP/wallpha-cli"
+      - run: WALLPHA_CLI_DIR="$RUNNER_TEMP/wallpha-cli/src/wallpha" ./tools/check-runtime-sync.sh
+      - run: cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/usr && DESTDIR="$RUNNER_TEMP/stage" cmake --install build
+      - run: ./scripts/package-release.sh
+      - run: gh release create "$GITHUB_REF_NAME" dist/* --title "wallpha-plasma $GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

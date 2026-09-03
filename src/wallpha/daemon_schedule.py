@@ -7,6 +7,32 @@ from . import apply, entries, log, media, schedule, state, transitions, yt, yt_p
 POLL = 15
 
 
+def _remember(active):
+    """Registra a mídia lógica aplicada para que `wallpha -n` sobreviva ao daemon."""
+    state.set_last(transitions.last_key(active))
+
+
+def _override_active(entries_list, now):
+    """Resolve o override manual enquanto ele ainda estiver dentro da fronteira natural."""
+    override = state.get_override()
+    if not override:
+        return None, None
+    try:
+        until = datetime.fromisoformat(str(override["until"]))
+        key = override["key"]
+    except (KeyError, TypeError, ValueError):
+        state.clear_override()
+        return None, None
+    if now >= until:
+        state.clear_override()
+        return None, None
+    active = transitions.entry_from_last(entries_list, key, now)
+    if active is None:
+        state.clear_override()
+        return None, None
+    return active, until
+
+
 def _get_yt_or_prefetch(url, prev_path=None):
     """Tenta pegar do prefetch, senão baixa com fallback best->worst. Limpa prev_path antes se N tocando."""
     if not url:
@@ -101,6 +127,9 @@ def _run_schedule():
 
         now = datetime.now()
         active = schedule.resolve_active(entries_list, now)
+        override_active, override_until = _override_active(entries_list, now)
+        if override_active is not None:
+            active = override_active
 
         if active is not None and active.get("integro"):
             is_playlist_yt = bool(active.get("is_yt_list") and "list=" in str(active.get("arquivo") or "").lower())
@@ -131,6 +160,7 @@ def _run_schedule():
                         )
                         log.err(f"aplicando: {entries.format_entry(active)} ({plugin})")
                         last_applied = (active["arquivo"], active["nome"], active.get("file_index", 0))
+                        _remember(active)
                         # atualiza N e N-1 para prefetch
                         if active.get("is_yt") and yt._is_in_yt_dir(path_for_apply):
                             if current_yt_path and current_yt_path != path_for_apply:
@@ -193,6 +223,7 @@ def _run_schedule():
                                 plugin, _ = apply.apply(str(chosen), loop=bool(active.get("repetir") or active.get("loop")), som=active.get("som"), integro=bool(active.get("integro")))
                                 log.err(f"aplicando: {entries.format_entry(active)} [1/1] {chosen_id} ({plugin})")
                                 last_applied = key
+                                _remember(active)
                                 # tracking YT para limpeza N-1 antes de N+1
                                 if yt._is_in_yt_dir(chosen):
                                     if current_yt_path and current_yt_path != chosen:
@@ -246,6 +277,7 @@ def _run_schedule():
                                     plugin, _ = apply.apply(str(chosen), loop=bool(active.get("repetir") or is_loop_true), som=active.get("som"), integro=bool(active.get("integro")))
                                     log.err(f"aplicando: {entries.format_entry(active)} [{idx+1}/{len(shuffled_ids)}] {chosen_id} ({plugin})")
                                     last_applied = key
+                                    _remember(active)
                                     if yt._is_in_yt_dir(chosen):
                                         if current_yt_path and current_yt_path != chosen:
                                             prev_yt_path = current_yt_path
@@ -318,6 +350,7 @@ def _run_schedule():
                             )
                             log.err(f"aplicando: {entries.format_entry(active)} ({plugin})")
                             last_applied = key
+                            _remember(active)
                             if yt._is_in_yt_dir(path):
                                 if current_yt_path and current_yt_path != path:
                                     prev_yt_path = current_yt_path
@@ -344,6 +377,7 @@ def _run_schedule():
                         )
                         log.err(f"aplicando: {entries.format_entry(active)} ({plugin})")
                         last_applied = key
+                        _remember(active)
                         try:
                             p = path if 'path' in locals() else active.get("arquivo")
                             if p and yt._is_in_yt_dir(str(p)):
@@ -358,6 +392,8 @@ def _run_schedule():
                         last_applied = None
 
         nxt = transitions.next_transition(entries_list, datetime.now())
+        if override_until is not None and (nxt is None or override_until < nxt):
+            nxt = override_until
         if nxt is None:
             time.sleep(POLL)
             continue

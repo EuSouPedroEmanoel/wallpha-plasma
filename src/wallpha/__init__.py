@@ -59,6 +59,7 @@ def main():
         state.set_on(False)
         state.clear_random()
         state.clear_list()
+        state.clear_override()
         _stop_service()
         yt.clean_yt_buffer()
         log.info("Modo automático/aleatório desativado (daemon parado). buffer do youtube limpo.")
