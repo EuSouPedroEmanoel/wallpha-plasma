@@ -2,6 +2,8 @@
 
 > **Renomeado de `wallp-plasma` → `wallpha-plasma` em v2.0.0** para evitar colisão com outros projetos `wallp`. Plasmoid ID agora é `com.wallpha.wallpaper` (antigo `com.wallp.wallpaper` removido no install). Veja nota completa no `wallpha-cli`.
 
+> **Nota de desculpas (v2.2.0):** Pedimos desculpas: as versões anteriores ainda não eram compatíveis de forma confiável com vídeos no motor nativo. Esta versão corrige a reprodução de vídeos, elimina a tela preta após trocas de mídia, mantém o último frame durante a pausa e estabiliza loop, áudio e retomada da agenda.
+
 > ⚠️ **Aviso:** O motor legacy `org.kde.image` para imagens será **removido na v3.0**. A partir daí apenas `com.wallpha.wallpaper` será suportado.
 
 > 🖥️ **Em breve:** `wallpha-gui` chega em **20/10/2026** — GUI para `wallpha.yml`.
@@ -82,6 +84,7 @@ CMakeLists.txt                # install para ${KDE_INSTALL_PLASMAWALLPAPERDIR}
 | `MuteMode` | Int | `som: true/false` | `4`=som, `5`=mudo (padrão) |
 | `Volume` | Double | — | `1.0` |
 | `Loop` | Bool | `repetir`/`loop` | `true`=MediaPlayer.Infinite |
+| `Paused` | Bool | `-p` | `true`=pausado, `false`=reproduzindo |
 | `FillMode` | Int | — | `2`=PreserveAspectCrop (KDE) |
 
 `main.qml` resolve: `Source` > `VideoUrls` > `Image`, detecta vídeo por extensão e mostra `Image` ou `VideoOutput`.

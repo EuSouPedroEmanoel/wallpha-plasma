@@ -1,6 +1,6 @@
 [project]
 name = "wallpha-plasma"
-version = "2.1.0"
+version = "2.2.0"
 description = "wallpha Plasma backend — daemon + plasmóide unificado imagem+vídeo (KDE Plasma 6)"
 requires-python = ">=3.10"
 dependencies = [

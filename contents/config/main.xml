@@ -30,6 +30,10 @@
       <label>wallpha: loop infinito do vídeo (repetir/loop:true)</label>
       <default>false</default>
     </entry>
+    <entry name="Paused" type="Bool">
+      <label>wallpha: pausa a reprodução do vídeo</label>
+      <default>false</default>
+    </entry>
     <!-- Leve: sem PauseMode/BlurMode/Effects/Crossfade. Só o essencial -->
     <entry name="FillMode" type="Int">
       <label>fillMode VideoOutput/Image</label>

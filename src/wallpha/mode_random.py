@@ -26,7 +26,7 @@ def _random_mode(opts):
     loop = False
     if opts["loop"] is not None:
         try:
-            loop = parse.parse_loop(opts["loop"])
+            loop = True if opts["loop"] == "__toggle__" else parse.parse_loop(opts["loop"])
         except ValueError as e:
             log.err(str(e))
             sys.exit(1)

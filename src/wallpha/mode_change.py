@@ -1,5 +1,5 @@
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from . import apply, entries, log, media, parse, randomcfg, state, transitions, yt
@@ -9,8 +9,75 @@ from .service import _start_service
 from .mode_random import _random_next
 
 
+def _toggle_playback():
+    current = state.get_current() or {}
+    path = current.get("path")
+    if not path:
+        last = state.get_last() or []
+        path = last[2] if len(last) > 2 else None
+    if not path or not Path(path).exists():
+        log.err("nenhum vídeo atual para pausar/retomar (aplique um vídeo com -c primeiro)")
+        sys.exit(1)
+    if not media.match_tipo(path, "video"):
+        log.err("-p só se aplica ao vídeo atual; imagens não possuem reprodução")
+        return
+    paused = not bool(current.get("paused", False))
+    try:
+        plugin, applied = apply.apply(path, loop=bool(current.get("loop", False)), som=bool(current.get("som", False)), paused=paused)
+        log.info("Vídeo %s: %s (%s)" % ("pausado" if paused else "retomado", applied, plugin))
+    except Exception as e:
+        log.err(f"erro ao alternar reprodução: {e}")
+        sys.exit(1)
+
+
+def _edit_current_cycle(opts):
+    current = state.get_current() or {}
+    cfg = state.get_random() or state.get_list()
+    if cfg is None and not current.get("path"):
+        log.err("nenhum ciclo ativo para editar")
+        sys.exit(1)
+    if cfg is None:
+        cfg = {}
+    if opts.get("som") is not None:
+        cfg["som"] = opts["som"].strip().lower() == "on"
+    if opts.get("loop") is not None:
+        raw = opts["loop"]
+        if raw == "__toggle__":
+            cfg["loop"] = not bool(cfg.get("loop"))
+        else:
+            try:
+                cfg["loop"] = parse.parse_loop(raw)
+            except ValueError as e:
+                log.err(str(e)); sys.exit(1)
+    if opts.get("tempo") is not None:
+        duration = parse.parse_tempo(opts["tempo"])
+        if duration is None or duration.total_seconds() < 5:
+            log.err("tempo mínimo de 5 segundos"); sys.exit(1)
+        cfg["tempo"] = int(duration.total_seconds())
+        current["tempo"] = cfg["tempo"]
+    if state.get_random() is not None:
+        state.set_random(cfg)
+    elif state.get_list() is not None:
+        state.set_list(cfg)
+    path = current.get("path")
+    if path and Path(path).exists() and media.match_tipo(path, "video"):
+        plugin, applied = apply.apply(path, loop=bool(cfg.get("loop", current.get("loop", False))), som=bool(cfg.get("som", current.get("som", False))), paused=bool(current.get("paused", False)))
+        current.update({"path": path, "loop": bool(cfg.get("loop", False)), "som": bool(cfg.get("som", False))})
+        state.set_current(current)
+        log.info(f"Ciclo atual atualizado: {applied} ({plugin})")
+    elif path:
+        log.info("Ciclo atual atualizado; opções de vídeo foram ignoradas para imagem")
+    _start_service()
+
+
 def _change(target, opts=None):
     opts = opts or {}
+    if opts.get("play_pause"):
+        _toggle_playback()
+        return
+    if target is None and any(opts.get(k) is not None for k in ("som", "loop", "tempo")):
+        _edit_current_cycle(opts)
+        return
     if target:
         _change_target(target, opts)
         return
@@ -39,7 +106,25 @@ def _change_target(target, opts=None):
                 plugin, path = apply.apply(files[0])
                 state.set_last([str(p), None, files[0]])
             else:
-                plugin, path = apply.apply(target)
+                loop = False
+                if opts.get("loop") is not None:
+                    raw_loop = opts["loop"]
+                    try:
+                        loop = True if raw_loop == "__toggle__" else parse.parse_loop(raw_loop)
+                    except ValueError as e:
+                        log.err(str(e)); sys.exit(1)
+                som = opts.get("som", "off").strip().lower() == "on" if opts.get("som") is not None else False
+                plugin, path = apply.apply(target, loop=bool(loop), som=som, paused=False)
+                if opts.get("tempo") is not None:
+                    duration = parse.parse_tempo(opts["tempo"])
+                    if duration is None or duration.total_seconds() < 5:
+                        log.err("tempo mínimo de 5 segundos"); sys.exit(1)
+                    seconds = int(duration.total_seconds())
+                    state.set_current({"path": str(p.resolve()), "loop": bool(loop), "som": som, "paused": False, "tempo": seconds})
+                    # Quando a agenda está ativa, mantenha este arquivo manual
+                    # pelo prazo solicitado e deixe o daemon retomar depois.
+                    if state.is_on():
+                        state.set_override({"path": str(p.resolve()), "until": (datetime.now() + timedelta(seconds=seconds)).isoformat()})
                 state.set_last([None, None, str(p.resolve())])
             log.info(f"Wallpaper aplicado: {path} ({plugin})")
         else:
@@ -81,7 +166,7 @@ def _start_list(lista, opts):
     loop = False
     if opts.get("loop") is not None:
         try:
-            loop = parse.parse_loop(opts["loop"])
+            loop = True if opts["loop"] == "__toggle__" else parse.parse_loop(opts["loop"])
         except ValueError as e:
             log.err(str(e))
             sys.exit(1)

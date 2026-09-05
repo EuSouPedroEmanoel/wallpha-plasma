@@ -33,10 +33,23 @@ def _screens(iface):
     screens = []
     for n in range(0, 10):
         cur = iface.wallpaper(dbus.UInt32(n))
-        if not cur:
-            break
-        screens.append(n)
+        # A numeração de telas pode ter lacunas após desconectar uma saída.
+        # Não interrompa a busca no primeiro slot vazio.
+        if cur:
+            screens.append(n)
     return screens
+
+
+def _screen_configs(iface):
+    """Return the current configuration for every usable Plasma screen."""
+    import dbus
+
+    configs = {}
+    for number in _screens(iface):
+        current = iface.wallpaper(dbus.UInt32(number))
+        if current:
+            configs[number] = dict(current)
+    return configs
 
 
 def plugin_for(path):
@@ -59,7 +72,7 @@ def plugin_for(path):
     return PLUGIN_IMAGE_LEGACY
 
 
-def _video_params(uri, loop=False, som=False, integro=False):
+def _video_params(uri, loop=False, som=False, integro=False, paused=False):
     video = {
         "filename": uri,
         "enabled": True,
@@ -79,13 +92,14 @@ def _video_params(uri, loop=False, som=False, integro=False):
         # wallpha unificado: Source é preferido, VideoUrls/Image mantidos para compat
         "Source": uri,
         "Loop": bool(loop),
+        "Paused": bool(paused),
     }
     if integro:
         params["ChangeWallpaperMode"] = 1
     return params
 
 
-def apply(path, screen=None, loop=False, som=False, integro=False):
+def apply(path, screen=None, loop=False, som=False, integro=False, paused=None):
     import dbus
 
     p = Path(path).expanduser().resolve()
@@ -93,27 +107,52 @@ def apply(path, screen=None, loop=False, som=False, integro=False):
         raise FileNotFoundError(f"arquivo não encontrado: {p}")
     uri = p.as_uri()
     plugin = plugin_for(p)
-    # unificado wallpha: manda Source + compat Image/VideoUrls para o mesmo plugin
+    # Ao reaplicar a mesma mídia (por exemplo, após reinício do daemon),
+    # preserve o estado pausado persistido. Uma mídia nova sempre inicia em play.
+    effective_paused = bool(paused) if paused is not None else False
+    if paused is None:
+        try:
+            from . import state
+            previous = state.get_current() or {}
+            if str(previous.get("path") or "") == str(p):
+                effective_paused = bool(previous.get("paused", False))
+        except Exception:
+            pass
+    # Não misture os formatos: configurações antigas permanecem no Plasma e o
+    # QML decide pela Source atual. Enviar Image para vídeo (ou VideoUrls para
+    # imagem) torna diagnósticos e plugins de compatibilidade ambíguos.
     if plugin == PLUGIN:
         is_video = p.suffix.lower() in VIDEO_EXTS
         if is_video:
-            params = _video_params(uri, loop=loop, som=som, integro=integro)
-            params["Image"] = uri  # compat fallback se QML ler Image
+            params = _video_params(uri, loop=loop, som=som, integro=integro, paused=effective_paused)
         else:
-            params = {"Source": uri, "Image": uri, "VideoUrls": "[]", "Loop": bool(loop), "MuteMode": 4 if som else 5, "Volume": 1.0}
+            params = {"Source": uri, "Image": uri}
     elif plugin == PLUGIN_VIDEO_LEGACY:
-        params = _video_params(uri, loop=loop, som=som, integro=integro)
+        params = _video_params(uri, loop=loop, som=som, integro=integro, paused=effective_paused)
     else:
         params = {"Image": uri}
 
     iface = _iface()
-    screens = [screen] if screen is not None else _screens(iface)
-    if not screens:
+    configs = _screen_configs(iface)
+    screens = list(configs) if screen is None else [int(screen)]
+    if not configs:
         raise RuntimeError("nenhuma tela de desktop encontrada (plasmashell rodando?)")
+    if screen is not None and screens[0] not in configs:
+        raise ValueError(f"tela inexistente: {screens[0]} (disponíveis: {', '.join(map(str, sorted(configs)))})")
 
     for n in screens:
-        cur = iface.wallpaper(dbus.UInt32(n))
-        merged = dict(cur) if cur else {}
+        merged = configs[n]
         merged.update(params)
         iface.setWallpaper(plugin, merged, dbus.UInt32(n))
+    try:
+        from . import log
+
+        log.info(f"Wallpaper enviado para tela(s) {', '.join(map(str, screens))}: {uri} ({plugin})")
+    except Exception:
+        pass
+    try:
+        from . import state
+        state.set_current({"path": str(p), "loop": bool(loop), "som": bool(som), "paused": effective_paused})
+    except Exception:
+        pass
     return plugin, p

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(wallpha-plasma VERSION 2.1.0)
+project(wallpha-plasma VERSION 2.2.0)
 
 # wallpha-plasma — backend Plasma do wallpha (wallpha = wallpaper) — plasmóide unificado imagem+vídeo, leve, sem painel
 # Instala via: cmake -B build && cmake --install build --prefix ~/.local

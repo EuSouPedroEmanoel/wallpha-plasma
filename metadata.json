@@ -13,7 +13,7 @@
         "Id": "com.wallpha.wallpaper",
         "License": "MIT",
         "Name": "wallpha Wallpaper",
-        "Version": "2.1.0",
+        "Version": "2.2.0",
         "Website": "https://github.com/EuSouPedroEmanoel/wallpha-cli"
     },
     "X-Plasma-API-Minimum-Version": "6.0"

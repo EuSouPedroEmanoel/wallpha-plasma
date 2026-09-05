@@ -13,17 +13,33 @@ def _remember(active):
 
 
 def _override_active(entries_list, now):
-    """Resolve o override manual enquanto ele ainda estiver dentro da fronteira natural."""
+    """Resolve override da agenda ou uma mídia manual enquanto durar o prazo."""
     override = state.get_override()
     if not override:
         return None, None
     try:
         until = datetime.fromisoformat(str(override["until"]))
-        key = override["key"]
     except (KeyError, TypeError, ValueError):
         state.clear_override()
         return None, None
     if now >= until:
+        state.clear_override()
+        return None, None
+    # Arquivo escolhido diretamente por ``-c ... -t`` não existe no yml.
+    # Crie uma entrada normalizada mínima para o loop do daemon reaplicar a
+    # mídia até o prazo, sem interferir no cálculo da próxima transição.
+    manual_path = override.get("path")
+    if manual_path:
+        return ({
+            "nome": "manual", "local": str(manual_path), "arquivo": str(manual_path),
+            "is_dir": False, "is_yt": False, "is_list": False, "is_yt_list": False,
+            "file_index": 0, "hora_start": None, "hora_end": None, "tempo": None,
+            "default": False, "repetir": False, "loop": False, "som": False,
+            "integro": False, "shuffled": False,
+        }, until)
+    try:
+        key = override["key"]
+    except (KeyError, TypeError):
         state.clear_override()
         return None, None
     active = transitions.entry_from_last(entries_list, key, now)

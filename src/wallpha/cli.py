@@ -1,6 +1,6 @@
 import sys
 
-flags = ("-c", "-n", "-r", "-t", "-m", "-q", "-l", "-rep", "-i", "-v", "-int", "-s", "-y", "-yl", "-a", "-x", "-d", "-log", "-h", "--help", "--init", "-al", "--list", "--al", "-ps", "--ps", "--profile", "--check")
+flags = ("-c", "-n", "-r", "-t", "-m", "-q", "-l", "-rep", "-i", "-v", "-int", "-s", "-p", "-y", "-yl", "-a", "-x", "-d", "-log", "-h", "--help", "--init", "-al", "--list", "--al", "-ps", "--ps", "--profile", "--check")
 mode_flags = ("-c", "-n", "-r", "-a", "-x", "-d", "--init", "-al", "--list", "--al", "-ps", "--ps", "--profile", "--check")
 value_flags = ("-t", "-m", "-q", "-l", "-s", "-y", "-yl")
 
@@ -27,6 +27,7 @@ def parse():
         "max": None,
         "qtd": None,
         "loop": None,
+        "play_pause": False,
         "rep": False,
         "images": False,
         "videos": False,
@@ -76,6 +77,8 @@ def parse():
             if i + 1 < len(args) and args[i + 1].isdigit():
                 opts["log_lines"] = int(args[i + 1])
                 i += 1
+        elif a == "-p":
+            opts["play_pause"] = True
         elif a in ("-rep", "-i", "-v", "-int"):
             if a == "-rep":
                 opts["rep"] = True
@@ -86,24 +89,28 @@ def parse():
             elif a == "-int":
                 opts["integro"] = True
         elif a in value_flags:
-            if i + 1 >= len(args) or args[i + 1].startswith("-"):
-                print(f"Erro: {a} precisa de um valor")
-                sys.exit(1)
-            if a == "-t":
-                opts["tempo"] = args[i + 1]
-            elif a == "-m":
-                opts["max"] = args[i + 1]
-            elif a == "-q":
-                opts["qtd"] = args[i + 1]
-            elif a == "-l":
-                opts["loop"] = args[i + 1]
-            elif a == "-s":
-                opts["som"] = args[i + 1]
-            elif a == "-y":
-                opts["yt"] = args[i + 1]
-            elif a == "-yl":
-                opts["yt_list"] = args[i + 1]
-            i += 1
+            if a == "-l" and "-c" in args and (i + 1 >= len(args) or args[i + 1].startswith("-")):
+                opts["loop"] = "__toggle__"
+            else:
+                if i + 1 >= len(args) or args[i + 1].startswith("-"):
+                    print(f"Erro: {a} precisa de um valor")
+                    sys.exit(1)
+                if a == "-t":
+                    opts["tempo"] = args[i + 1]
+                elif a == "-m":
+                    opts["max"] = args[i + 1]
+                elif a == "-q":
+                    opts["qtd"] = args[i + 1]
+                elif a == "-l":
+                    opts["loop"] = args[i + 1]
+                elif a == "-s":
+                    opts["som"] = args[i + 1]
+                elif a == "-y":
+                    opts["yt"] = args[i + 1]
+                elif a == "-yl":
+                    opts["yt_list"] = args[i + 1]
+            if opts["loop"] != "__toggle__":
+                i += 1
         elif a.startswith("-") and a not in flags:
             print(f"Erro: argumento desconhecido '{a}'")
             help()
@@ -136,6 +143,13 @@ def parse():
         else:
             print("Erro: use apenas um comando por vez (-c, -n, -r, -a, -x, -d, -al, -ps, --profile ou --init)")
             sys.exit(1)
+
+    if opts["play_pause"] and (not opts["change"] or opts["target"] is not None):
+        print("Erro: -p só pode ser usado com -c sem alvo")
+        sys.exit(1)
+    if opts["play_pause"] and any(opts.get(k) is not None for k in ("som", "loop", "tempo", "max", "qtd")):
+        print("Erro: -p não pode ser combinado com ajustes de ciclo")
+        sys.exit(1)
 
     if opts["next"] and opts["target"] is not None:
         print("Erro: -n não aceita caminho/nome (use -c para escolher)")
@@ -173,13 +187,13 @@ def help():
     print("  wallpha --profile           Perfil: varre yml e avisa vídeos >500MB, arquivos faltando, yt sem cache")
     print("  wallpha --check             Alias para --profile (compat install.sh --check)")
     print("  wallpha -al [regex]         Lista wallpapers do yml (filtra por regex no nome/local)")
-    print("  wallpha -c [caminho|nome]   Troca o wallpaper")
+    print("  wallpha -c [caminho|nome]   Troca o wallpaper; sem alvo edita o ciclo atual")
     print("                              caminho = arquivo (vídeo/imagem) ou pasta")
     print("                              nome    = nome definido no yml (item ou lista)")
     print("                              sem nada = próximo wallpaper do yml")
     print("                              lista aceita os mesmos args do -r (slideshow):")
     print("                                -t tempo | -m máx | -q N | -l true|N | -rep")
-    print("                                -i (imagens) | -v (vídeos) | -int | -s on|off")
+    print("                                -i (imagens) | -v (vídeos) | -int | -s on|off | -p")
     print("                              sem args: uma passada; -l true: loop até -x;")
     print("                              -l N: N passadas e volta à agenda")
     print("  wallpha -n                  Próximo wallpaper do yml")

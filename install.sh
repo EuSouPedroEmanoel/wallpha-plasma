@@ -4,11 +4,7 @@
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 DEST="$HOME/.local/share/plasma/wallpapers/com.wallpha.wallpaper"
-# migração wallp → wallpha (v2.0.0)
-if [ -d "$HOME/.local/share/plasma/wallpapers/com.wallp.wallpaper" ] && [ ! -d "$DEST" ]; then
-    # remove antigo após instalar novo (evita falha silenciosa D-Bus)
-    echo "  (migração: com.wallp.wallpaper → com.wallpha.wallpaper — antigo será removido após install)"
-fi
+LEGACY_DEST="$HOME/.local/share/plasma/wallpapers/com.wallp.wallpaper"
 YES=0; CHECK=0
 for a in "$@"; do case "$a" in -y|--yes) YES=1 ;; --check) CHECK=1 ;; *) echo "uso: $0 [-y] [--check]"; exit 1 ;; esac; done
 have(){ command -v "$1" >/dev/null 2>&1; }
@@ -32,18 +28,69 @@ install_pkg(){
     esac
 }
 
+pkg_installed() {
+    case "$PM" in
+        pacman) pacman -Q "$1" >/dev/null 2>&1 ;;
+        apt) dpkg -l "$1" 2>/dev/null | grep -q "^ii" ;;
+        dnf|zypper) rpm -q "$1" >/dev/null 2>&1 ;;
+        *) return 1 ;;
+    esac
+}
+
+check_pkg() {
+    if pkg_installed "$1"; then ok "$1"; else no "$1"; install_pkg "$1" || true; fi
+}
+
+check_qtmultimedia_qml() {
+    local qtpaths qml_root
+    qtpaths="$(command -v qtpaths6 || command -v qtpaths || true)"
+    if [ -n "$qtpaths" ]; then
+        qml_root="$($qtpaths --query QT_INSTALL_QML 2>/dev/null || true)"
+        if [ -n "$qml_root" ] && [ -f "$qml_root/QtMultimedia/qmldir" ]; then
+            ok "QtMultimedia QML ($qml_root/QtMultimedia)"
+            return 0
+        fi
+    fi
+    # Algumas distribuições não expõem qtpaths no PATH do usuário; cubra os
+    # diretórios de instalação usuais sem depender da ferramenta de dev Qt.
+    for qml_root in /usr/lib/qt6/qml /usr/lib/qt/qml /usr/lib64/qt6/qml /usr/lib64/qt/qml; do
+        if [ -f "$qml_root/QtMultimedia/qmldir" ]; then
+            ok "QtMultimedia QML ($qml_root/QtMultimedia)"
+            return 0
+        fi
+    done
+    no "QtMultimedia QML (módulo QtMultimedia não encontrado)"
+    return 1
+}
+
+install_plasmoid() {
+    # Sempre instala/atualiza a cópia local: somente detectar o diretório antigo
+    # deixava o QML corrigido fora da sessão Plasma.
+    if have cmake; then
+        echo "  cmake install -> $DEST"
+        cmake -B "$DIR/build" --install-prefix "$HOME/.local" >/dev/null
+        cmake --install "$DIR/build" >/dev/null
+        ok "plasmoid atualizado (cmake)"
+    elif have kpackagetool6; then
+        kpackagetool6 -t Plasma/Wallpaper --upgrade "$DIR" 2>&1 | tail
+        ok "plasmoid atualizado (kpackagetool6)"
+    else
+        mkdir -p "$DEST/contents"
+        cp -a "$DIR/metadata.json" "$DEST/"
+        cp -a "$DIR/contents/." "$DEST/contents/"
+        ok "plasmoid atualizado (cp)"
+    fi
+}
+
 step "Plasmóide com.wallpha.wallpaper"
-if [ -d "/usr/share/plasma/wallpapers/com.wallpha.wallpaper" ] || [ -d "$DEST" ]; then
-  ok "plasmoid com.wallpha.wallpaper"
-else
-  no "plasmoid com.wallpha.wallpaper"
-  if [ "$CHECK" = 1 ]; then ok "rodar sem --check instala"; else
-    if command -v cmake >/dev/null 2>&1; then
-      echo "  cmake build -> $DEST"
-      cmake -B "$DIR/build" --install-prefix "$HOME/.local" >/dev/null && cmake --install "$DIR/build" >/dev/null && ok "plasmoid instalado (cmake)"
-    elif have kpackagetool6; then kpackagetool6 -t Plasma/Wallpaper --install "$DIR" 2>&1 | tail && ok "plasmoid instalado (kpackagetool6)"
-    else mkdir -p "$DEST/contents" && cp -a "$DIR/metadata.json" "$DEST/" && cp -a "$DIR/contents/"* "$DEST/contents/" && ok "plasmoid instalado (cp)"; fi
+if [ "$CHECK" = 1 ]; then
+  if [ -f "$DEST/contents/ui/main.qml" ] || [ -f "/usr/share/plasma/wallpapers/com.wallpha.wallpaper/contents/ui/main.qml" ]; then
+    ok "plasmoid com.wallpha.wallpaper"
+  else
+    no "plasmoid com.wallpha.wallpaper"
   fi
+else
+  install_plasmoid
 fi
 
 step "Dependências (KDE Plasma 6 em qualquer distro)"
@@ -62,6 +109,17 @@ elif [ "$PM" = "zypper" ]; then
     if rpm -q extra-cmake-modules >/dev/null 2>&1; then ok "extra-cmake-modules"; else no "extra-cmake-modules"; install_pkg "extra-cmake-modules" || true; fi
 fi
 
+step "Vídeo Qt Multimedia / FFmpeg"
+case "$PM" in
+  pacman) check_pkg "qt6-multimedia"; check_pkg "qt6-multimedia-ffmpeg"; check_pkg "ffmpeg" ;;
+  apt) check_pkg "qml6-module-qtmultimedia"; check_pkg "gstreamer1.0-plugins-bad"; check_pkg "ffmpeg" ;;
+  dnf) check_pkg "qt6-qtmultimedia"; check_pkg "ffmpeg" ;;
+  zypper) check_pkg "qt6-multimedia"; check_pkg "qt6-multimedia-ffmpeg"; check_pkg "ffmpeg" ;;
+  *) no "Qt Multimedia/FFmpeg (instale manualmente para $PM)" ;;
+esac
+if have ffmpeg; then ok "ffmpeg ($(ffmpeg -version 2>/dev/null | head -n 1))"; else no "executável ffmpeg"; fi
+check_qtmultimedia_qml || true
+
 step "Daemon Python (wallpha-plasma) — funciona em Debian, Fedora, Arch, openSUSE"
 if python3 -c "import yaml, dbus" 2>/dev/null; then ok "python3:dbus, yaml"; else
     no "python3:dbus,yaml"
@@ -78,14 +136,34 @@ if [ "$CHECK" != 1 ]; then
   # compat
   ln -sf "$HOME/.local/bin/wallpha" "$HOME/.local/bin/wallp" 2>/dev/null || true
   ln -sf "$HOME/.local/bin/wallpha-plasma-daemon" "$HOME/.local/bin/wallp-plasma-daemon" 2>/dev/null || true
-  # remove plasmoid antigo se existir (evita D-Bus falha silenciosa)
-  if [ -d "$HOME/.local/share/plasma/wallpapers/com.wallp.wallpaper" ]; then
-      rm -rf "$HOME/.local/share/plasma/wallpapers/com.wallp.wallpaper" 2>/dev/null || true
-      echo "  (removido plasmoid antigo com.wallp.wallpaper)"
+  # Remove o pacote legado inclusive do registro do KPackage; não deixe duas
+  # implementações concorrendo por chamadas D-Bus.
+  if [ -d "$LEGACY_DEST" ]; then
+      rm -rf "$LEGACY_DEST"
+      echo "  (removido plasmoid legado com.wallp.wallpaper)"
+  fi
+  if have kpackagetool6; then
+      kpackagetool6 -t Plasma/Wallpaper --remove com.wallp.wallpaper >/dev/null 2>&1 || true
   fi
   ok "bin wallpha -> $HOME/.local/bin/wallpha (via wallpha-plasma, compat wallp)"
-  # opcional venv
-  if [ ! -d "$DIR/.venv" ]; then python3 -m venv "$DIR/.venv" 2>/dev/null && "$DIR/.venv/bin/pip" install -q pytest pyyaml 2>/dev/null || true; fi
+  # Ambiente de testes opcional. Recria também se o python interno ainda for
+  # um symlink para um interpretador removido/antigo (comum após upgrade).
+  VENV="$DIR/.venv"
+  VENV_REBUILD=0
+  if [ -d "$VENV" ]; then
+      if [ ! -x "$VENV/bin/python" ] || ! "$VENV/bin/python" -c 'import sys' >/dev/null 2>&1; then
+          VENV_REBUILD=1
+      elif [ "$(readlink -f "$VENV/bin/python")" != "$(readlink -f "$(command -v python3)")" ]; then
+          VENV_REBUILD=1
+      fi
+  fi
+  if [ ! -d "$VENV" ] || [ "$VENV_REBUILD" = 1 ]; then
+      if [ "$VENV_REBUILD" = 1 ]; then
+          rm -rf "$VENV"
+          echo "  (recriando .venv com o interpretador atual)"
+      fi
+      python3 -m venv "$VENV" 2>/dev/null && "$VENV/bin/pip" install -q pytest pyyaml 2>/dev/null || true
+  fi
 fi
 
 step "Daemon systemd (wallpha-daemon.service)"
