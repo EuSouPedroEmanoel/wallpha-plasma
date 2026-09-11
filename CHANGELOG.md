@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.1 — 2026-09-11
+
+- Corrige a instalação no Fedora: usa `libplasma`, pacote que fornece `kf6-plasma` e o módulo QML `org.kde.plasma.plasmoid`.
+
 ## 2.2.0 — 2026-09-05
 
 Pedimos desculpas: as versões anteriores ainda não eram compatíveis de forma confiável com vídeos no motor nativo. Esta versão corrige a reprodução de vídeos, elimina a tela preta após trocas de mídia, mantém o último frame durante a pausa e estabiliza loop, áudio e retomada da agenda.
